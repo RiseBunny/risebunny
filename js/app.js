@@ -69,7 +69,7 @@ var I18N_DICT = {
     btn_send: 'Gönder', form_success: 'Mesaj ulaştı!', form_mailto: 'E-posta uygulaması açılıyor…',
     form_note: 'Uçtan uca şifreli. Spam yok, asla.',
     form_rate: 'Tekrar göndermeden önce bir dakika bekle.', form_invalid: 'Lütfen tüm alanları doğru doldur.',
-    discord_title: 'Komuta Merkezine Katıl', discord_desc: 'Yeni buildler ilk olarak Discord sunucumuzda paylaşılır. Davet linki burada.',
+    discord_title: 'Komuta Merkezine Katıl', discord_desc: 'Yeni buildler ilk olarak Discord sunucumuzda paylaşılır. Davet linki çok yakında burada.',
     footer_nav: 'Navigasyon', footer_legal: 'Yasal',
     privacy: 'Gizlilik Politikası', terms: 'Kullanım Şartları',
     copyright: '© 2026 RiseBunny. Tüm hakları saklıdır.', footer_slogan: 'Sınırların Ötesine Yüksel.',

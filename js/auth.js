@@ -1,6 +1,3 @@
-/**
- * RiseBunny Auth — Discord & Firebase Oturum Entegrasyonu
- */
 import { firebaseAuth } from './firebase-config.js';
 
 export async function checkSessionAndSync() {
@@ -11,16 +8,7 @@ export async function checkSessionAndSync() {
     const session = await res.json();
     if (!session.ok || !session.user) return null;
 
-    // Discord oturum bilgisi
-    const user = session.user;
-
-    // UI güncellemeleri
-    const userEmailEl = document.getElementById('user-email');
-    if (userEmailEl) {
-      userEmailEl.textContent = `${user.username} (${user.id})`;
-    }
-
-    return user;
+    return session.user;
   } catch (e) {
     console.error('Oturum doğrulama hatası:', e);
     return null;
@@ -29,28 +17,30 @@ export async function checkSessionAndSync() {
 
 document.addEventListener('DOMContentLoaded', async () => {
   const user = await checkSessionAndSync();
-  const authScreen = document.getElementById('auth-screen');
-  const panel = document.getElementById('panel');
+  const authSlot = document.querySelector('[data-auth-slot]');
 
-  // Discord ID veya yetkili rol kontrolü
-  const adminUIDs = ['oblLBCNGXEYF8plKq8KUr3m6o4f1', '1310366324731547798'];
-  
-  if (user && adminUIDs.includes(user.id)) {
-    if (authScreen) authScreen.hidden = true;
-    if (panel) panel.hidden = false;
+  if (authSlot) {
+    if (user) {
+      const avatarUrl = user.avatar 
+        ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` 
+        : 'images/bot.svg';
 
-    if (typeof window.loadForumUsers === 'function') {
-      window.loadForumUsers();
+      authSlot.innerHTML = `
+        <div class="user-pill" style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.05);padding:4px 12px;border-radius:99px;border:1px solid var(--line);">
+          <img src="${avatarUrl}" alt="${user.username}" style="width:24px;height:24px;border-radius:50%">
+          <span style="font-size:0.85rem;font-weight:600">${user.username}</span>
+          <a href="/api/auth/logout" class="btn-logout" style="color:var(--faint);margin-left:4px;" title="Çıkış Yap"><i class="fa-solid fa-right-from-bracket"></i></a>
+        </div>
+      `;
+    } else {
+      authSlot.innerHTML = `
+        <a href="/api/auth/discord/start" class="btn sm line"><i class="fa-brands fa-discord"></i> Discord ile Giriş</a>
+      `;
     }
-  } else if (firebaseAuth) {
-    firebaseAuth.onAuthStateChanged((fbUser) => {
-      if (fbUser && adminUIDs.includes(fbUser.uid)) {
-        if (authScreen) authScreen.hidden = true;
-        if (panel) panel.hidden = false;
-        if (typeof window.loadForumUsers === 'function') {
-          window.loadForumUsers();
-        }
-      }
-    });
+  }
+
+  // Hesabım & Mağaza Paneli Rendering
+  if (typeof window.initAccountAndShop === 'function') {
+    window.initAccountAndShop(user);
   }
 });
