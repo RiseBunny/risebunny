@@ -3,35 +3,43 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RiseBunny Forum — Topluluk</title>
-<meta name="description" content="RiseBunny topluluk forumu. Yükselmek için çalışıyoruz! 🐰">
-<link rel="stylesheet" href="css/styles.css">
-<link rel="stylesheet" href="css/forum.css?v=9">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" type="image/svg+xml" href="images/bot.svg">
+<link rel="alternate icon" type="image/png" href="images/bot.png">
+<link rel="apple-touch-icon" href="images/bot.svg">
+<title>Forum — RiseBunny</title>
+<meta name="description" content="RiseBunny topluluk forumu: Minecraft, Discord botları ve oyun projeleri hakkında tartışmalar.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="css/styles.css?v=13">
+<link rel="stylesheet" href="css/forum.css?v=13">
 </head>
 <body>
 
-<nav class="rb-nav">
-  <div class="rb-navin">
-    <a class="rb-logo" href="index.html">🐰<b>RiseBunny</b></a>
-    <a class="rb-navhome" href="#/">💬<span>Forum</span></a>
-    <div class="rb-navright">
-      <div class="rb-lang">
-        <button type="button" onclick="rbSetLang('tr')">🇹🇷TR</button>
-        <button type="button" onclick="rbSetLang('en')">🇬🇧EN</button>
+<header class="site-header" id="navbar">
+  <div class="header-in">
+    <div style="display:flex;align-items:center;gap:14px">
+      <a class="brand" href="index.html"><img src="images/bot.svg" alt="RiseBunny" class="brand-icon">RiseBunny</a>
+      <a class="nav-subtag" href="#/"><i class="fa-regular fa-comments"></i> Forum</a>
+    </div>
+    <div class="header-side">
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <button type="button" class="lang-btn" id="flang-tr" onclick="rbSetLang('tr')"><span class="flag" aria-hidden="true">🇹🇷</span>TR</button>
+        <button type="button" class="lang-btn" id="flang-en" onclick="rbSetLang('en')"><span class="flag" aria-hidden="true">🇬🇧</span>EN</button>
       </div>
       <span id="rb-nav-user"></span>
     </div>
   </div>
-</nav>
+</header>
 
-<main id="view"><div class="rb-empty">🐰...</div></main>
+<main id="view"><div class="rb-empty"><i class="fa-solid fa-spinner fa-spin"></i> Yükleniyor...</div></main>
 
-<footer class="rb-footer">© 2026 RiseBunny — Tüm hakları saklıdır. 🐰</footer>
+<footer class="rb-footer">© 2026 RiseBunny — Tüm hakları saklıdır.</footer>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="js/firebase-config.js?v=8"></script>
+<script src="js/maintenance.js?v=6"></script>
 <script>
   try {
     if (!firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
@@ -42,6 +50,18 @@
   }
 </script>
 <script src="js/forum-auth.js"></script>
-<script src="js/forum.js?v=9"></script>
+<script src="js/auth.js?v=1"></script>
+<script src="js/forum.js?v=13"></script>
+<script>
+  // Sync active language button
+  (function syncLangBtns() {
+    var cur = localStorage.getItem('rb-lang') || 'tr';
+    var bTr = document.getElementById('flang-tr'), bEn = document.getElementById('flang-en');
+    if (bTr && bEn) {
+      bTr.classList.toggle('active', cur === 'tr');
+      bEn.classList.toggle('active', cur === 'en');
+    }
+  })();
+</script>
 </body>
 </html>

@@ -3,250 +3,213 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#0a0a0f">
-  
-<title>RiseBunny | Rubidium Client, RiseBunny Bot & Brawl Stars Projeleri</title>
-<meta name="description" content="RiseBunny Software: 7/24 aktif Discord botu, Rubidium Minecraft istemcisi ve Brawl Stars projeleri. Geleceği Bugünden Yaşa!">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" type="image/svg+xml" href="images/bot.svg">
+<link rel="alternate icon" type="image/png" href="images/bot.png">
+<link rel="apple-touch-icon" href="images/bot.svg">
+<title>RiseBunny | Türkçe Discord Botu, Minecraft Client — Rise Beyond Limits</title>
+<meta name="description" content="RiseBunny Software: 162 komutluk Türkçe, İngilizce Discord botu, Rubidium Minecraft istemcisi, Brawl Stars projeleri. Ücretsiz, 7/24, sürekli güncel.">
+<meta name="keywords" content="risebunny, türkçe discord botu, discord bot, minecraft client, minecraft fps artırma, rubidium client, sodium fork, brawl stars">
+<meta name="author" content="RiseBunny Software">
+<meta name="robots" content="index, follow, max-image-preview:large">
 <link rel="canonical" href="https://risebunny.vercel.app/">
-
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="RiseBunny Software">
-<meta property="og:title" content="RiseBunny - Geleceği Bugünden Yaşa">
-<meta property="og:description" content="Discord botu, Rubidium Minecraft istemcisi ve Brawl Stars projeleri — RiseBunny ekibi. 🐰">
-<meta property="og:url" content="https://risebunny.vercel.app/">
-<meta property="og:image" content="https://risebunny.vercel.app/images/og.png">
-<meta property="og:image:width" content="1130">
-<meta property="og:image:height" content="630">
 <meta property="og:locale" content="tr_TR">
 <meta property="og:locale:alternate" content="en_US">
-
+<meta property="og:title" content="RiseBunny — Türkçe Discord Botu + Minecraft Client">
+<meta property="og:description" content="162 komutluk Discord botu, Rubidium FPS istemcisi — RiseBunny ekibi. Ücretsiz, 7/24.">
+<meta property="og:url" content="https://risebunny.vercel.app/">
+<meta property="og:image" content="https://risebunny.vercel.app/images/og.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="RiseBunny - Geleceği Bugünden Yaşa">
-<meta name="twitter:description" content="Discord botu, Rubidium Minecraft istemcisi ve Brawl Stars projeleri — RiseBunny ekibi. 🐰">
+<meta name="twitter:title" content="RiseBunny — Türkçe Discord Botu + Minecraft Client">
+<meta name="twitter:description" content="Discord botları, Minecraft istemcileri — RiseBunny ekibi.">
 <meta name="twitter:image" content="https://risebunny.vercel.app/images/og.png">
-
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "RiseBunny",
-  "url": "https://risebunny.vercel.app/",
-  "image": "https://risebunny.vercel.app/images/og.png",
-  "description": "RiseBunny Software: Discord bot, Minecraft client (Rubidium), Brawl Stars projeleri.",
-  "applicationCategory": "GameApplication",
-  "operatingSystem": "Windows, Android, Web",
-  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "TRY" },
-  "author": { "@type": "Organization", "name": "RiseBunny Software" }
-}
+{"@context":"https://schema.org","@type":"Organization","name":"RiseBunny Software","url":"https://risebunny.vercel.app/","logo":"https://risebunny.vercel.app/images/bot.svg"}
 </script>
-
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","name":"RiseBunny","url":"https://risebunny.vercel.app/"}
+</script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/styles.css?v=13">
 </head>
 <body>
-  <!-- ═══ RiseBunny: Bakım Modu + Banner X Fix ═══ -->
-<div id="rb-maintenance" style="display:none;position:fixed;inset:0;z-index:99999;background:#050507;color:#fff;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:24px;font-family:system-ui,sans-serif">
-  <div style="font-size:64px;animation:rbPulse 1.6s infinite">🐰</div>
-  <h1 style="margin:12px 0 4px;font-size:26px">🔧 Bakım Modu</h1>
-  <p id="rb-mnt-msg" style="color:#9ca3af;max-width:420px;line-height:1.6"></p>
-  <p style="color:#4b5563;font-size:12px;margin-top:24px">© 2026 RiseBunny — Tüm hakları saklıdır.</p>
-  <style>@keyframes rbPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}</style>
-</div>
 
-<div id="particles" aria-hidden="true"></div>
 <div id="site-banner" class="site-banner" hidden></div>
 
-<nav class="navbar" id="navbar">
-  <div class="nav-inner">
-    <a href="#hero" class="nav-logo">
-      <img id="logo-img" class="logo-img" alt="" style="display:none">
-      <span class="logo-emoji">🐰</span>
-      <span>RiseBunny</span>
-    </a>
-    <div class="nav-links" id="nav-links">
-      <a href="#hero" data-i18n="nav_home">Home</a>
-      <a href="#products" data-i18n="nav_products">Products</a>
-      <a href="#about" data-i18n="nav_about">About</a>
-      <a href="#faq" data-i18n="nav_faq">FAQ</a>
-      <a href="#contact" data-i18n="nav_contact">Contact</a>
-    </div>
-    <div class="nav-actions">
-      <div class="lang-switcher">
-        <button type="button" class="lang-btn" data-lang="en">🇬🇧EN</button>
-        <button type="button" class="lang-btn" data-lang="tr">🇹🇷TR</button>
+<header class="site-header" id="navbar">
+  <div class="header-in">
+    <a href="#gate" class="brand"><img src="images/bot.svg" alt="RiseBunny" class="brand-icon">RiseBunny</a>
+    <nav class="nav-links" id="nav-links">
+      <a href="#arena" data-i18n="nav_arena">Minecraft</a>
+      <a href="risebunny.html">RiseBunny Bot</a>
+      <a href="#sistemler" data-i18n="nav_sys">Systems</a>
+      <a href="#sss" data-i18n="nav_faq">FAQ</a>
+      <a href="forum.html">Forum</a>
+    </nav>
+    <div class="header-side">
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <button type="button" class="lang-btn" data-lang="tr"><span class="flag" aria-hidden="true">🇹🇷</span>TR</button>
+        <button type="button" class="lang-btn active" data-lang="en"><span class="flag" aria-hidden="true">🇬🇧</span>EN</button>
       </div>
+      <a href="#iletisim" class="btn sm solid" data-i18n="nav_contact">Contact</a>
       <button type="button" class="burger" id="burger" aria-label="Menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
-    </div>
-  </div>
-</nav>
-
-<header class="hero" id="hero">
-  <div class="hero-content">
-    <div class="hero-logo">
-      <img id="hero-logo-img" class="logo-img" alt="" style="display:none">
-      <span class="hero-emoji">🐰</span>
-    </div>
-    <h1 data-i18n="hero_title">Rise <span class="gradient-text">Beyond Limits.</span></h1>
-    <p class="hero-sub" data-i18n="hero_sub">Innovative software. Powerful experiences. Built by RiseBunny.</p>
-    <p class="hero-desc" data-i18n="hero_desc">RiseBunny develops innovative gaming clients, game projects and community-focused software.</p>
-    <div class="hero-btns">
-      <a href="#products" class="btn btn-primary"><i class="fa-solid fa-rocket"></i> <span data-i18n="btn_explore">Explore Products</span></a>
-      <a href="#about" class="btn btn-outline"><span data-i18n="btn_learn">Learn More</span></a>
     </div>
   </div>
 </header>
 
-<section id="products">
-  <div class="container">
-    <div class="section-header reveal">
-      <h2 data-i18n="prod_title">Our Products</h2>
-      <p data-i18n="prod_sub">Explore the software and projects built by RiseBunny.</p>
-    </div>
-    <div class="products-grid" id="products-grid"></div>
+<main>
+<!-- HERO -->
+<section class="hero" id="gate">
+  <p class="eyebrow" data-i18n="hero_badge">RiseBunny Software</p>
+  <h1 class="hero-title" data-i18n="hero_title">Rise Beyond Limits.</h1>
+  <p class="hero-sub" data-i18n="hero_sub">Discord bots, Minecraft clients, Brawl Stars projects — RiseBunny crew.</p>
+  <div class="hero-cta">
+    <a href="#arena" class="btn solid"><span data-i18n="btn_explore">Explore</span><i class="fa-solid fa-arrow-down"></i></a>
+    <a href="#botcore" class="btn line"><span data-i18n="btn_learn">Meet the Crew</span></a>
   </div>
 </section>
 
-<section id="features">
-  <div class="container">
-    <div class="section-header reveal">
-      <h2 data-i18n="feat_title">Why RiseBunny?</h2>
-      <p data-i18n="feat_sub">The values that drive everything we build.</p>
+<!-- 01 MINECRAFT -->
+<section class="section" id="arena">
+  <div class="section-head mc-head">
+    <span class="sec-num">01</span>
+    <div>
+      <h2 class="sec-title" data-i18n="arena_title">Rubidium V4</h2>
+      <p class="sec-desc" data-i18n="arena_desc">Closet oyuncular için ghost client: legit görünen combat modülleri, oyun içi ClickGUI ve hazır configler — Vape V4 ve Rise ayarında, ücretsiz.</p>
     </div>
-    <div class="features-grid" id="features-grid"></div>
+    <div id="mc-3d-wrap" class="mc-3d-wrap" title="3D Minecraft Skin">
+      <canvas id="mc-3d-canvas" width="140" height="180"></canvas>
+    </div>
+  </div>
+  <ul class="rows">
+    <li><b>01</b><span data-i18n="arena_f1">Ghost odaklı</span></li>
+    <li><b>02</b><span data-i18n="arena_f2">ClickGUI + configler</span></li>
+    <li><b>03</b><span data-i18n="arena_f3">Tamamen ücretsiz</span></li>
+  </ul>
+  <div class="row-cta">
+    <button class="btn solid" data-open-product="rubidium-client"><span data-i18n="arena_cta">Get It</span><i class="fa-solid fa-arrow-right"></i></button>
+    <a class="btn line" href="rubidium.html"><i class="fa-solid fa-cube"></i><span>İstemci Sayfası</span></a>
   </div>
 </section>
 
-<section id="about">
-  <div class="container">
-    <div class="about-grid">
-      <div class="about-text reveal">
-        <h2 data-i18n="about_title">Built to Rise.</h2>
-        <p data-i18n="about_p1">RiseBunny is a software company focused on creating innovative gaming software, custom clients and community tools.</p>
-        <p data-i18n="about_p2">We bridge the gap between complex technology and great user experience.</p>
+<!-- 02 DISCORD -->
+<section class="section" id="botcore">
+  <div class="section-head">
+    <span class="sec-num">02</span>
+    <div>
+      <h2 class="sec-title" data-i18n="bot_title">RiseBunny Bot</h2>
+      <p class="sec-desc" data-i18n="bot_desc">Our multi-purpose Discord bot, live on top.gg: AI registration, subscriber roles, economy, moderation and automated raid protection — updated non-stop.</p>
+    </div>
+  </div>
+  <div class="feed" id="mod-demo" aria-live="polite">
+    <div class="feed-line"><b>nova_77</b><span data-i18n="demo_msg1">anyone up for ranked?</span></div>
+    <div class="feed-line toxic"><b>griefer_x</b><span class="txt" data-i18n="demo_msg2">you suck</span><span class="strike"></span></div>
+    <div class="feed-line sys"><img src="images/bot.svg" alt="RiseBunny Bot" class="bot-avatar"><span data-i18n="bot_flagged">Message flagged → removed.</span></div>
+    <div class="feed-line ban" id="ban-badge"><span data-i18n="bot_banned">USER BANNED</span></div>
+  </div>
+  <div class="row-cta">
+    <button class="btn solid" data-open-product="risebunny-bot"><span data-i18n="bot_cta">Get It</span><i class="fa-solid fa-arrow-right"></i></button>
+    <a class="btn line" href="risebunny.html"><i class="fa-solid fa-robot"></i><span>Bot Sayfası</span></a>
+    <button class="btn line" id="btn-replay-mod"><i class="fa-solid fa-rotate-right"></i><span data-i18n="bot_replay">Replay moderation</span></button>
+  </div>
+</section>
+
+<!-- 03 SYSTEMS -->
+<section class="section" id="sistemler">
+  <div class="section-head">
+    <span class="sec-num">03</span>
+    <div>
+      <h2 class="sec-title" data-i18n="feat_title">Why the Bunny Never Sleeps</h2>
+      <p class="sec-desc" data-i18n="feat_sub">Four obsessions behind every release.</p>
+    </div>
+  </div>
+  <ul class="rows" id="sys-grid"></ul>
+</section>
+
+<!-- 04 FAQ -->
+<section class="section section-narrow" id="sss">
+  <div class="section-head">
+    <span class="sec-num">04</span>
+    <div>
+      <h2 class="sec-title" data-i18n="faq_title">Questions? We Answer Fast.</h2>
+    </div>
+  </div>
+  <div class="faq" id="sss-list"></div>
+</section>
+
+<!-- 05 CONTACT -->
+<section class="section" id="iletisim">
+  <div class="section-head">
+    <span class="sec-num">05</span>
+    <div>
+      <h2 class="sec-title" data-i18n="con_title">Got an Idea? Let Us Build It.</h2>
+      <p class="sec-desc" data-i18n="con_sub">Feedback, collabs, bug reports or wild ideas — the inbox is open.</p>
+    </div>
+  </div>
+  <div class="con-grid">
+    <form class="con-form" id="con-form" novalidate>
+      <div class="con-row">
+        <label><span data-i18n="lbl_name">Name</span><input type="text" id="n-name" name="name" required maxlength="60" data-i18n-ph="ph_name" placeholder="Your name"></label>
+        <label><span data-i18n="lbl_email">Email</span><input type="email" id="n-mail" name="email" required maxlength="120" data-i18n-ph="ph_email" placeholder="you@example.com"></label>
       </div>
-      <div class="about-stats reveal">
-        <div class="stat-card"><strong>24/7</strong><span data-i18n="stat_cycle">Dev cycle</span></div>
-        <div class="stat-card"><strong>100%</strong><span data-i18n="stat_free">Free forever</span></div>
-        <div class="stat-card"><strong>0</strong><span data-i18n="stat_excuses">Excuses</span></div>
-        <div class="stat-card"><strong>∞</strong><span data-i18n="stat_ideas">Ideas in the backlog</span></div>
-      </div>
-    </div>
+      <label><span data-i18n="lbl_subject">Subject</span><input type="text" id="n-subj" name="subject" required maxlength="120" data-i18n-ph="ph_subject" placeholder="Subject"></label>
+      <label><span data-i18n="lbl_message">Message</span><textarea id="n-msg" name="message" required maxlength="2000" data-i18n-ph="ph_message" placeholder="Your message..."></textarea></label>
+      <input type="text" name="website" id="n-hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0">
+      <button type="submit" class="btn solid" id="send-btn"><span data-i18n="btn_send">Send It</span><i class="fa-solid fa-arrow-right"></i></button>
+      <p class="form-note" data-i18n="form_note">No spam, ever.</p>
+    </form>
+    <aside class="con-side">
+      <a class="discord-card" data-open-product="risebunny-bot" tabindex="0" role="button"><i class="fa-brands fa-discord"></i><div><b data-i18n="discord_title">Join the Discord</b><small data-i18n="discord_desc">New builds drop on our Discord first. The invite link lands here very soon.</small></div></a>
+      <div class="social-links" id="social-links"></div>
+    </aside>
   </div>
 </section>
+</main>
 
-<section id="ecosystem">
-  <div class="container">
-    <div class="section-header reveal">
-      <h2 data-i18n="eco_title">Our Ecosystem</h2>
-      <p data-i18n="eco_sub">The platforms RiseBunny builds for.</p>
-    </div>
-    <div class="platforms reveal">
-      <div class="platform-chip"><i class="fa-solid fa-cube"></i> Minecraft</div>
-      <div class="platform-chip"><i class="fa-solid fa-star"></i> Brawl Stars</div>
-      <div class="platform-chip"><i class="fa-brands fa-discord"></i> Discord</div>
-      <div class="platform-chip"><i class="fa-brands fa-tiktok"></i> TikTok</div>
-      <div class="platform-chip"><i class="fa-brands fa-telegram"></i> Telegram</div>
-      <div class="platform-chip"><i class="fa-brands fa-windows"></i> Windows</div>
-    </div>
-  </div>
-</section>
-
-<section id="faq">
-  <div class="container">
-    <div class="section-header reveal">
-      <h2 data-i18n="faq_title">Frequently Asked Questions</h2>
-    </div>
-    <div class="faq-list" id="faq-list"></div>
-  </div>
-</section>
-
-<section id="contact">
-  <div class="container">
-    <div class="section-header reveal">
-      <h2 data-i18n="contact_title">Let's Build Something Great.</h2>
-      <p data-i18n="contact_sub">Have a question, collaboration idea or feedback?</p>
-    </div>
-    <div class="contact-grid">
-      <div class="contact-info reveal">
-        <h3 data-i18n="discord_title">Join Our Community</h3>
-        <p data-i18n="discord_desc">Our Discord invite link will be shared here very soon.</p>
-        <div class="social-links" id="social-links"></div>
-      </div>
-      <form class="contact-form reveal" id="contact-form" novalidate>
-        <div class="form-group">
-          <label for="c-name" data-i18n="lbl_name">Name</label>
-          <input type="text" id="c-name" name="name" required data-i18n-ph="ph_name" placeholder="Your name">
-        </div>
-        <div class="form-group">
-          <label for="c-email" data-i18n="lbl_email">Email</label>
-          <input type="email" id="c-email" name="email" required data-i18n-ph="ph_email" placeholder="you@example.com">
-        </div>
-        <div class="form-group">
-          <label for="c-subject" data-i18n="lbl_subject">Subject</label>
-          <input type="text" id="c-subject" name="subject" required data-i18n-ph="ph_subject" placeholder="Subject">
-        </div>
-        <div class="form-group">
-          <label for="c-message" data-i18n="lbl_message">Message</label>
-          <textarea id="c-message" name="message" required data-i18n-ph="ph_message" placeholder="Your message..."></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary" id="send-btn"><i class="fa-solid fa-paper-plane"></i> <span data-i18n="btn_send">Send Message</span></button>
-        <div class="form-note"><i class="fa-solid fa-lock"></i><span data-i18n="form_note">Your message is transmitted over an encrypted connection.</span></div>
-      </form>
-    </div>
-  </div>
-</section>
-
-<footer>
-  <div class="container">
+<footer class="site-footer">
+  <div class="footer-in">
+    <div class="footer-brand">RiseBunny</div>
     <div class="footer-grid">
-      <div class="footer-brand">
-        <img id="footer-logo-img" class="logo-img" alt="" style="display:none">
-        <span class="f-emoji">🐰</span>
-        <h4>RiseBunny</h4>
-        <p data-i18n="footer_slogan">Rise Beyond Limits.</p>
+      <div class="footer-col">
+        <h5 data-i18n="footer_nav">Navigation</h5>
+        <a href="#arena" data-i18n="nav_arena">Minecraft</a>
+        <a href="rubidium.html">Rubidium Client</a>
+        <a href="#botcore" data-i18n="nav_bot">Mod Bot</a>
+        <a href="risebunny.html">RiseBunny Bot</a>
+        <a href="#sss" data-i18n="nav_faq">FAQ</a>
       </div>
       <div class="footer-col">
-        <h4 data-i18n="footer_nav">Navigation</h4>
-        <a href="#hero" data-i18n="nav_home">Home</a>
-        <a href="#products" data-i18n="nav_products">Products</a>
-        <a href="#about" data-i18n="nav_about">About</a>
-        <a href="#faq" data-i18n="nav_faq">FAQ</a>
-      </div>
-      <div class="footer-col">
-        <h4 data-i18n="footer_legal">Legal</h4>
+        <h5 data-i18n="footer_legal">Legal</h5>
         <a href="privacy.html" data-i18n="privacy">Privacy Policy</a>
         <a href="terms.html" data-i18n="terms">Terms of Service</a>
-      </div>
-      <div class="footer-col">
-        <h4 data-i18n="footer_contact">Contact</h4>
-        <a href="#contact" data-i18n="nav_contact">Contact</a>
+        <a href="forum.html">Forum</a>
       </div>
     </div>
-    <div class="footer-bottom rb-copyright" data-i18n="copyright">© 2026 RiseBunny. All rights reserved.</div>
+    <div class="footer-base" id="foot-base">
+      <span data-i18n="copyright">© 2026 RiseBunny. All rights reserved.</span>
+      <span class="slogan" data-i18n="footer_slogan">Rise Beyond Limits.</span>
+    </div>
   </div>
 </footer>
 
-<div class="modal" id="modal">
-  <div class="modal-content">
-    <button type="button" class="modal-close" id="modal-close" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
-    <img class="m-img" id="m-img" alt="" style="display:none">
-    <h2 class="m-title" id="m-title"></h2>
-    <div class="m-tags" id="m-tags"></div>
-    <p class="m-desc" id="m-desc"></p>
-    <h3 class="m-feat-title" id="m-feat-title">Key Features</h3>
-    <div class="m-features" id="m-features"></div>
-    <div class="modal-actions" id="modal-actions"></div>
-  </div>
-</div>
-
+<div class="modal" id="modal"><div class="modal-box">
+  <button type="button" class="modal-x" id="modal-close" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+  <h3 id="m-title"></h3><div class="m-tags" id="m-tags"></div>
+  <p id="m-desc"></p><h4 id="m-feat-title"></h4>
+  <div id="m-features"></div><div class="modal-actions" id="modal-actions"></div>
+</div></div>
 <div class="toast-wrap" id="toast-wrap"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="js/firebase-config.js"></script>
+<script src="js/maintenance.js?v=6"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/mc-3d.js"></script>
 <script src="js/rb-data.js?v=8"></script>
-<script src="js/app.js?v=8"></script>
+<script src="js/app.js?v=12"></script>
 </body>
 </html>
