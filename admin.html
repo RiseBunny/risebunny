@@ -26,6 +26,7 @@
       <input type="password" id="login-pass" required autocomplete="current-password" placeholder="••••••••">
     </label>
     <button class="btn btn-primary" type="submit"><i class="fa-solid fa-right-to-bracket"></i> Giriş Yap</button>
+    <a class="btn btn-outline" href="/api/auth/discord/start?next=/admin.html" style="width:100%;margin-top:10px;padding:12px"><i class="fa-brands fa-discord"></i> Discord ile Giriş</a>
     <p id="login-attempts" class="login-hint" aria-live="polite">Kalan deneme hakkı: 3 / 3</p>
   </form>
 </div>
@@ -223,6 +224,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="js/firebase-config.js"></script>
+<script src="js/auth.js?v=1"></script>
 <script src="js/admin.js?v=12"></script>
 <script src="js/admin-forum.js?v=12"></script>
 <script src="js/admin-extra.js?v=12"></script>

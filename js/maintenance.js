@@ -7,6 +7,10 @@
 if (window.__rbMntLoaded) return; window.__rbMntLoaded = true;
 try {
 var ADMIN_UID = 'oblLBCNGXEYF8plKq8KUr3m6o4f1';
+function isAdminUser(u) {
+  if (window.RB_IS_ADMIN) return window.RB_IS_ADMIN(u);
+  return !!(u && u.uid === ADMIN_UID);
+}
 var CONF = {
   apiKey: "AIzaSyAq5Nafl9aI2TabzGsj5J9ij6lNwyfTguM",
   authDomain: "gen-lang-client-0590499912.firebaseapp.com",
@@ -67,7 +71,7 @@ function start() {
           /* Ziyaretçiye anında göster (admin girişi halledilirse kapatılır) */
           showMaintenance(data);
           auth.onAuthStateChanged(function (u) {
-            if (u && u.uid === ADMIN_UID) { decided = true; hideMaintenance(); }
+            if (isAdminUser(u)) { decided = true; hideMaintenance(); }
             else if (!decided) { decided = true; showMaintenance(data); }
           });
         } catch (e) { showMaintenance(data); }

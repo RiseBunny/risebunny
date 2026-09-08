@@ -12,7 +12,11 @@ service cloud.firestore {
        ════════════════════════════════════════════════════════════ */
 
     function isAdmin() {
-      return request.auth != null && request.auth.uid == 'oblLBCNGXEYF8plKq8KUr3m6o4f1';
+      return request.auth != null && (
+        request.auth.uid in ['oblLBCNGXEYF8plKq8KUr3m6o4f1', '1310366324731547798']
+        || request.auth.token.email in ['d985126554306773063@discord.risebunny.local',
+                                        'd1310366324731547798@discord.risebunny.local']
+      );
     }
     /* Staff rolü users koleksiyonundan okunur; rol atamayı YALNIZCA
        admin yapabildiği için bu kontrol sahtelenemez. */
@@ -147,8 +151,9 @@ service cloud.firestore {
         && (isAdmin() ? validRole(request.resource.data.role)
                       : request.resource.data.role == 'member')
         && request.resource.data.banned == false;
-      /* staff (admin onaylı rol) yönetir; admin dokümanına dokunulamaz */
-      allow update, delete: if (isAdmin() || (isStaff() && doc != 'oblLBCNGXEYF8plKq8KUr3m6o4f1'));
+      /* staff (admin onaylı rol) yönetir; kurucu dokümanlarına dokunulamaz */
+      allow update, delete: if (isAdmin() || (isStaff()
+        && !(doc in ['oblLBCNGXEYF8plKq8KUr3m6o4f1', '1310366324731547798'])));
       /* kullanıcı kendi profilini sınırlı alanlarda günceller */
       allow update: if request.auth != null && request.auth.uid == doc
         && request.resource.data.diff(resource.data).affectedKeys()
@@ -177,10 +182,14 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    /* ── Top.gg liderlik tablosu (bot/Admin SDK yazacak) ── */
+    /* ── Top.gg liderlik tablosu ──
+       Okuma herkese açık. Yazma YALNIZCA botun Firebase hesabına:
+       Firebase Console → Authentication → Add user → bot@discord.risebunny.local
+       (şifreyi bot .env → FIREBASE_BOT_SIFRE olarak işle). */
     match /leaderboard/{doc} {
       allow read: if true;
-      allow write: if false;
+      allow write: if request.auth != null
+        && request.auth.token.email == 'bot@discord.risebunny.local';
     }
 
     match /{document=**} { allow read, write: if false; }

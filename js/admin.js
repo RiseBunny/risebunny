@@ -8,7 +8,22 @@
   function getDeviceId() { var id = localStorage.getItem('rb_device_id'); if (!id) { id = 'd-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10); localStorage.setItem('rb_device_id', id); } return id; }
   function show404() { fetch('404.html').then(function (r) { if (!r.ok) throw 0; return r.text(); }).then(function (h) { document.open(); document.write(h); document.close(); }).catch(function () { document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#ffffff;color:#111827;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;text-align:center;padding:20px"><div><h1 style="font-size:4rem;font-weight:800;letter-spacing:-.03em;margin:0">404</h1><p style="color:#6b7280;margin:10px 0 26px">Page Not Found</p><a href="index.html" style="color:#2563eb;text-decoration:none;font-weight:600">← Back to Home</a></div></div>'; }); }
   function toast(msg, type) { type = type || 'success'; var ic = { success: 'fa-circle-check', error: 'fa-circle-exclamation', info: 'fa-circle-info' }; var el = document.createElement('div'); el.className = 'toast toast-' + type; el.innerHTML = '<i class="fa-solid ' + (ic[type] || 'fa-circle-info') + '"></i><span>' + msg + '</span>'; var w = $('#toast-wrap'); if (w) w.appendChild(el); requestAnimationFrame(function () { el.classList.add('show'); }); setTimeout(function () { el.classList.remove('show'); setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 350); }, 4200); }
-  var ADMIN_UID = 'oblLBCNGXEYF8plKq8KUr3m6o4f1';
+  /* Admin erişimi: SADECE bu iki kişi.
+     - Firebase UID listesi + Discord köprü e-postaları (d<ID>@discord.risebunny.local).
+     - Köprü şifresi HMAC ile üretildiği için o e-postayla SADECE gerçek Discord
+       sahibi girebilir; e-posta kontrolü güvenlidir. */
+  var ADMIN_UIDS = ['oblLBCNGXEYF8plKq8KUr3m6o4f1', '1310366324731547798'];
+  var ADMIN_DISCORD = ['985126554306773063', '1310366324731547798'];
+  function isAdminUser(u) {
+    if (!u) return false;
+    if (ADMIN_UIDS.indexOf(u.uid) > -1) return true;
+    var em = String(u.email || '').toLowerCase();
+    for (var i = 0; i < ADMIN_DISCORD.length; i++) {
+      if (em === 'd' + ADMIN_DISCORD[i] + '@discord.risebunny.local') return true;
+    }
+    return false;
+  }
+  window.RB_IS_ADMIN = isAdminUser;
   var db = null, auth = null, fconf = window.firebaseConfig || null;
   if (window.firebase && fconf && fconf.projectId) { try { if (!firebase.apps.length) firebase.initializeApp(fconf); auth = firebase.auth(); db = firebase.firestore(); } catch (e) { db = null; } }
   if (!db || !auth) { show404(); return; }
@@ -17,12 +32,13 @@
      Yanlış şifre hakkı: 3 (üç). 3. hatada cihaz Firestore 'bans'a yazılır. */
   var MAX_ATTEMPTS = 3;
   var TOKEN_TTL = 5 * 60 * 1000;
+  var viaDiscord = /[?&]login=ok/.test(location.search);
   var hasToken = false;
   try {
     hasToken = sessionStorage.getItem('rb_admin_token') === '1' &&
       (Date.now() - (parseInt(sessionStorage.getItem('rb_admin_time') || '0', 10) || 0)) < TOKEN_TTL;
   } catch (e) { hasToken = false; }
-  if (!hasToken) { show404(); return; }
+  if (!hasToken && !viaDiscord) { show404(); return; }
   sessionStorage.removeItem('rb_admin_token');
   sessionStorage.removeItem('rb_admin_time');
   var DEVICE_ID = getDeviceId();
@@ -49,8 +65,14 @@
   function showPanel() { var a = $('#auth-screen'); if (a) a.hidden = true; var p = $('#panel'); if (p) p.hidden = false; loadAll(); }
   function boot() {
     auth.onAuthStateChanged(function (user) {
-      if (user && user.uid !== ADMIN_UID) { auth.signOut(); showLogin(); toast('Bu hesap admin yetkisine sahip değil.', 'error'); return; }
+      if (user && !isAdminUser(user)) {
+        auth.signOut();
+        try { history.replaceState(null, '', 'admin.html'); } catch (e) {}
+        show404();
+        return;
+      }
       if (!user) { showLogin(); return; }
+      try { history.replaceState(null, '', 'admin.html'); } catch (e2) {}
       sessionStorage.setItem('rb_admin_token', '1');
       sessionStorage.setItem('rb_admin_time', String(Date.now()));
       var e = $('#user-email'); if (e) e.textContent = user.email || '';
@@ -61,7 +83,7 @@
       e.preventDefault();
       var email = $('#login-email').value.trim().toLowerCase();
       auth.signInWithEmailAndPassword(email, $('#login-pass').value).then(function (r) {
-        if (r.user.uid !== ADMIN_UID) { auth.signOut(); failAttempt(email); return; }
+        if (!isAdminUser(r.user)) { auth.signOut(); failAttempt(email); return; }
         setSec({ attempts: 0, banned: false });
         toast('Giriş başarılı', 'success'); logAction('login', 'Admin giriş yaptı');
       }).catch(function () { failAttempt(email); });

@@ -8,17 +8,30 @@ window.firebaseConfig = {
   appId: "1:203829901581:web:66d532c52155db4aea9844"
 };
 window.ADMIN_UID = 'oblLBCNGXEYF8plKq8KUr3m6o4f1';
+/* Admin allowlist: sahip + 1310366324731547798 (UID veya Discord köprü e-postası). */
+window.ADMIN_UIDS = ['oblLBCNGXEYF8plKq8KUr3m6o4f1', '1310366324731547798'];
+window.ADMIN_DISCORD = ['985126554306773063', '1310366324731547798'];
+window.RB_IS_ADMIN = function (u) {
+  if (!u) return false;
+  if (window.ADMIN_UIDS.indexOf(u.uid) > -1) return true;
+  var em = String(u.email || '').toLowerCase();
+  for (var i = 0; i < window.ADMIN_DISCORD.length; i++) {
+    if (em === 'd' + window.ADMIN_DISCORD[i] + '@discord.risebunny.local') return true;
+  }
+  return false;
+};
 
 (function () {
 'use strict';
 if (window.__rbCoreLoaded) return; window.__rbCoreLoaded = true;
 if (/admin\.html(\?|$)/.test(location.pathname)) {
-  /* Gizli giriş kuralı: SADECE footer 5-tık jetonu + 5 dk tazelik.
-     Doğrudan URL (/admin, /admin.html, /panel...) ile gelen herkes 404 görür. */
+  /* Gizli giriş kuralı: footer 5-tık jetonu (5 dk) VEYA Discord dönüşü (?login=ok).
+     Gerçek yetki denetimini admin.js yapar (allowlist dışı → 404). */
   var _tok = null, _tim = 0;
   try { _tok = sessionStorage.getItem('rb_admin_token'); _tim = parseInt(sessionStorage.getItem('rb_admin_time') || '0', 10) || 0; } catch (e) {}
   var _fresh = _tok === '1' && (Date.now() - _tim) < 5 * 60 * 1000;
-  if (!_fresh) {
+  var _discordBack = /[?&]login=ok/.test(location.search);
+  if (!_fresh && !_discordBack) {
     try { sessionStorage.removeItem('rb_admin_token'); sessionStorage.removeItem('rb_admin_time'); } catch (e2) {}
     show404();
     return;
@@ -101,7 +114,7 @@ function run(app) {
       if (!auth) return; /* no auth SDK → stay in maintenance (safe side) */
       try {
         auth.onAuthStateChanged(function (u) {
-          if (u && u.uid === ADMIN_UID) hideMaintenance();
+          if (window.RB_IS_ADMIN && window.RB_IS_ADMIN(u)) hideMaintenance();
           else showMaintenance(d && d.message);
         });
       } catch (e) {}

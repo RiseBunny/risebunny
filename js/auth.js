@@ -85,12 +85,15 @@ function restoreFromFirebase() {
   } catch (e) { __restoring = false; }
 }
 
-/* Forum Firebase köprüsü: Discord oturumu varsa forum kimliği için Firebase'e de sok.
-   (Forum yazma yetkisi Firebase Auth ister; kimlik bilgileri /api/me'den, oturum sahibine özel gelir.) */
+/* Forum + Admin Firebase köprüsü: Discord oturumu varsa ilgili kimlik için
+   Firebase'e de sok. (Forum yazma + bakım muafiyeti Firebase Auth ister;
+   kimlik bilgileri /api/me'den, oturum sahibine özel gelir.) */
 function forumBridge(s) {
   try {
     if (!s.ok || !s.fb || !s.fb.email) return;
-    if (!document.getElementById('rb-nav-user') && location.pathname.indexOf('forum') === -1) return;
+    var isForum = !!document.getElementById('rb-nav-user') || location.pathname.indexOf('forum') > -1;
+    var isAdmin = /admin\.html/.test(location.pathname);
+    if (!isForum && !isAdmin) return;
     if (!window.firebase || !firebase.auth) return;
     if (!firebase.apps.length) {
       if (!window.firebaseConfig) return;
