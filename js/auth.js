@@ -54,11 +54,36 @@ fetch('/api/me').then(function (r) { return r.ok ? r.json() : { ok: false }; })
     window.RBSession = { loading: false, ok: !!j.ok, user: j.user || null, fb: j.fb || null, game: j.game || null, botOnline: !!j.botOnline };
     if (j.ok && j.user) {
       try { localStorage.setItem('rb_discord', JSON.stringify({ id: j.user.id, username: j.user.username })); } catch (e) {}
+    } else {
+      // Ters yön SSO: Discord çerezi yok ama Firebase oturumu varsa geri yükle
+      restoreFromFirebase();
     }
     paint();
     forumBridge(window.RBSession);
   })
   .catch(function () { window.RBSession.loading = false; paint(); });
+
+/* Forum → site yönü: Firebase'de bağlı kullanıcı risebunny'de tekrar giriş yapmaz. */
+var __restoring = false;
+function restoreFromFirebase() {
+  if (__restoring) return;
+  try {
+    if (!window.firebase || !firebase.auth) return;
+    if (!firebase.apps.length) {
+      if (!window.firebaseConfig) return;
+      try { firebase.initializeApp(window.firebaseConfig); } catch (e2) { return; }
+    }
+    var u = firebase.auth().currentUser;
+    if (!u) return;
+    __restoring = true;
+    u.getIdToken().then(function (tok) {
+      return fetch('/api/session/restore', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken: tok }) });
+    }).then(function (r) { return r.json(); }).then(function (j) {
+      if (j && j.ok) location.reload();
+      else __restoring = false;
+    }).catch(function () { __restoring = false; });
+  } catch (e) { __restoring = false; }
+}
 
 /* Forum Firebase köprüsü: Discord oturumu varsa forum kimliği için Firebase'e de sok.
    (Forum yazma yetkisi Firebase Auth ister; kimlik bilgileri /api/me'den, oturum sahibine özel gelir.) */

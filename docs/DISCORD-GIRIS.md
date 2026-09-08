@@ -87,8 +87,19 @@ Bot yeniden başlat. Logda görmelisin:
 - Site 05 iletişim formu → `/api/contact` → bot `#owner-log` kanalına embed düşer
   (bot çevrimdışıysa form yine kaydedilir, log atlanır).
 - Site mağaza satışı + pazar satışı + `r!pet al` → owner-log'a embed/satır düşer.
-- VIP bitimi: 60 sn süpürücü yakalar → owner-log + kullanıcıya **DM** atılır.
+- VIP bitimi: 60 sn süpürücü yakalar → owner-log + kullanıcıya **DM (embed)** atılır.
 - Gerekli: bot `.env`'de `BOT_API_SECRET`, `OWNER_LOG` kanal ID'si (`utils.js`).
+
+## 8) Tek oturum (SSO) + Rastgele Paket
+
+- Giriş tek noktadan: Discord (forumda form yok; `#/login` otomatik Discord'a atar).
+- risebunny → forum: çerez → Firebase otomatik giriş. Forum → risebunny:
+  Firebase token `/api/session/restore` ile çereze çevrilir, tekrar giriş gerekmez.
+- Premiumu aktif kullanıcı premiumu tekrar alamaz (403 + buton kilitli).
+- 🎁 Rastgele Paket 150K: %15 Prem7 + %7 Prem30 (tek) / petler %40 tekli, %40 çiftli,
+  %20 üçlü. Sonuç ekranda + DM'de (embed), DB'ye işlenir.
+- Canlı veri zinciri: `/api/stats` (top.gg → bot) + `/api/leaderboard` (bot → Firestore).
+  İkisi de `BOT_API_URL` ister; yoksa simülasyon + ekranda sebebi yazar.
 
 ## 8) Güvenlik notları
 

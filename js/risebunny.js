@@ -231,7 +231,7 @@ function lbNote(srcKey) {
   if (!src) return;
   src.textContent = srcKey === 'live-bot' ? (LANG === 'tr' ? '● bot API — canlı (5 dk önbellek)' : '● bot API — live (5-min cache)')
     : srcKey === 'live-db' ? (LANG === 'tr' ? '● site veritabanı — canlı' : '● site database — live')
-    : (LANG === 'tr' ? '○ simülasyon — bot çevrimdışı' : '○ simulation — bot offline');
+    : (LANG === 'tr' ? '○ simülasyon — bot bağlı değil (BOT_API_URL yok / çevrimdışı)' : '○ simulation — bot not connected (no BOT_API_URL / offline)');
 }
 function loadBoard(kind, elId) {
   paintBoard(elId, simBoard(kind), kind);
@@ -244,7 +244,10 @@ function loadBoard(kind, elId) {
       if (!r.ok) throw 0;
       return r.json();
     }).then(function (d) {
-      if (d && d.data && d.data.length) { paintBoard(elId, d.data, kind); lbNote('live-bot'); }
+      if (d && d.data && d.data.length) {
+        paintBoard(elId, d.data, kind);
+        lbNote(d.source === 'firestore' ? 'live-db' : 'live-bot');
+      }
       else tryFirestore();
     }).catch(tryNext);
   }
@@ -350,8 +353,14 @@ function loadShop(botOnline) {
       var btn = document.createElement('button');
       btn.type = 'button'; btn.className = 'btn solid sm';
       btn.textContent = LANG === 'tr' ? 'Satın Al' : 'Buy';
-      btn.disabled = !botOnline && !window.RBSession.ok;
-      btn.addEventListener('click', function () { buyItem(it, btn); });
+      var hasPremium = !!(window.RBSession.game && window.RBSession.game.premium && window.RBSession.game.premium.active);
+      if (it.tip === 'premium' && hasPremium) {
+        btn.disabled = true;
+        btn.textContent = LANG === 'tr' ? 'Zaten Premiumsun ✓' : 'Already Premium ✓';
+      } else {
+        btn.disabled = !botOnline && !window.RBSession.ok;
+        btn.addEventListener('click', function () { buyItem(it, btn); });
+      }
       card.appendChild(btn);
       grid.appendChild(card);
     });

@@ -135,8 +135,8 @@
     <div class="header-side">
       <span data-auth-slot></span>
       <div class="lang-toggle" role="group" aria-label="Language">
-        <button type="button" class="lang-btn" data-lang="tr"><span class="flag-t flag-tr">TR</span></button>
-        <button type="button" class="lang-btn active" data-lang="en"><span class="flag-t flag-gb">EN</span></button>
+        <button type="button" class="lang-btn" data-lang="tr"><span class="flag" aria-hidden="true">🇹🇷</span>TR</button>
+        <button type="button" class="lang-btn active" data-lang="en"><span class="flag" aria-hidden="true">🇬🇧</span>EN</button>
       </div>
       <a href="#oyver" class="btn sm solid">Oy Ver</a>
       <button type="button" class="burger" id="burger" aria-label="Menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
@@ -181,7 +181,7 @@
     <span class="sec-num">01</span>
     <div>
       <h2 class="sec-title" data-tr="Canlı Sayılar" data-en="Live Numbers">Canlı Sayılar</h2>
-      <p class="sec-desc" data-tr="Bot çevrimiçiyken bu sayılar top.gg + bot API'den gelir. Çevrimdışıyken simülasyon gösterilir." data-en="When the bot is online these come from top.gg + bot API. Otherwise a simulation is shown.">Bot çevrimiçiyken bu sayılar top.gg + bot API'den gelir. Çevrimdışıyken simülasyon gösterilir.</p>
+      <p class="sec-desc" data-tr="Sunucu, kullanıcı ve oy sayıları anlık olarak güncellenir." data-en="Server, user and vote counts update live.">Sunucu, kullanıcı ve oy sayıları anlık olarak güncellenir.</p>
     </div>
   </div>
   <div class="stat-grid">
@@ -190,7 +190,7 @@
     <div class="stat-card"><b id="st-cmds">162</b><span data-tr="Komut" data-en="Commands">Komut</span><small>17 kategori</small></div>
     <div class="stat-card"><b id="st-votes">—</b><span data-tr="Oy (aylık)" data-en="Votes (monthly)">Oy (aylık)</span><small id="st-votes-src">…</small></div>
   </div>
-  <p class="lb-note" data-tr="Simülasyon her ~18 saniyede bir küçük artışlarla güncellenir — onay öncesi test/görsel amaçlıdır, gerçek veri top.gg webhook + AutoStats'tan gelir." data-en="Simulation ticks with small increments every ~18s — for pre-approval testing only; real data comes from the top.gg webhook + AutoStats.">Simülasyon her ~18 saniyede bir küçük artışlarla güncellenir — onay öncesi test/görsel amaçlıdır, gerçek veri top.gg webhook + AutoStats'tan gelir.</p>
+  <p class="lb-note" data-tr="Sayılar periyodik olarak tazelenir." data-en="Numbers refresh periodically.">Sayılar periyodik olarak tazelenir.</p>
 </section>
 
 <!-- FEATURES -->

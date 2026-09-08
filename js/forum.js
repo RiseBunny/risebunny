@@ -402,13 +402,16 @@ async function renderProfile(username) {
   </div></div>`;
 }
 
-/* ── Giriş (yalnızca Discord — eski kullanıcı adı/şifre formu kaldırıldı) ── */
+/* ── Giriş sayfası kapalı: oturum risebunny üzerinden Discord ile açılır.
+   Oturum yoksa doğrudan Discord'a yönlendirilir (form yok). ── */
 function renderLogin() {
-  view().innerHTML = `<div class="forum-wrap"><div class="rb-form" style="text-align:center">
-    <h2>🐰 ${t("login")}</h2>
-    <p style="opacity:.75;font-size:.9rem">${esc((window.RB_T && window.RB_T.discordOnly) || "Tek giriş yöntemi: Discord hesabın.")}</p>
-    <a class="rb-btn" href="/api/auth/discord/start?next=/risebunny" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none"><i class="fa-brands fa-discord"></i> Discord ile Giriş</a>
-    <p id="authMsg" class="rb-msg"></p></div></div>`;
+  try {
+    var back = encodeURIComponent(location.hash || '#/');
+    location.replace('/api/auth/discord/start?next=' + encodeURIComponent('/risebunny'));
+  } catch (e) {
+    location.href = '/api/auth/discord/start?next=/risebunny';
+  }
+  view().innerHTML = `<div class="rb-empty">🐰 Discord'a yönlendiriliyorsun…</div>`;
 }
 
 /* ── Yetkili Paneli ── */
