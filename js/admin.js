@@ -389,11 +389,43 @@
     if (!confirm('Tüm log silinsin mi?')) return;
     db.collection('activity').get().then(function (snap) { var batch = db.batch(); snap.forEach(function (d) { batch.delete(d.ref); }); return batch.commit(); }).then(function () { toast('Log temizlendi', 'success'); loadLogs(); }).catch(function (e) { toast('Hata: ' + e.message, 'error'); });
   });
+  /* Bağlantı tanısı: hangi koleksiyonun neden okunamadığını panele yazar */
+  function diag() {
+    var box = $('#conn-diag');
+    if (!box || !auth.currentUser) return;
+    box.innerHTML = '<div class="log-empty">Bağlantı test ediliyor…</div>';
+    var u = auth.currentUser;
+    var satirlar = [];
+    satirlar.push('<div class="log-item"><i class="fa-solid fa-user"></i><span>Oturum: ' + esc(u.email || u.uid) + '</span></div>');
+    var testler = [
+      ['users', db.collection('users').limit(1).get()],
+      ['threads', db.collection('threads').limit(1).get()],
+      ['messages', db.collection('messages').limit(1).get()],
+      ['activity', db.collection('activity').limit(1).get()],
+      ['bans', db.collection('bans').limit(1).get()]
+    ];
+    var biten = 0;
+    testler.forEach(function (t) {
+      t[1].then(function (s) {
+        satirlar.push('<div class="log-item"><i class="fa-solid fa-circle-check" style="color:var(--ok)"></i><span>' + t[0] + ': OK (' + s.size + ' kayıt örneği)</span></div>');
+      }).catch(function (e) {
+        var msg = (e && e.message) || String(e);
+        var ipucu = /permission/i.test(msg)
+          ? ' → <b>firestore.rules publish edilmemiş veya bu hesap admin değil.</b>'
+          : '';
+        satirlar.push('<div class="log-item"><i class="fa-solid fa-circle-exclamation" style="color:var(--err)"></i><span>' + t[0] + ': HATA — ' + esc(msg) + ipucu + '</span></div>');
+      }).then(function () {
+        biten++;
+        if (biten === testler.length) box.innerHTML = satirlar.join('');
+      });
+    });
+  }
   function loadDashboard() {
     var p = $('#stat-products'); if (p) p.textContent = products.length;
     var f = $('#stat-faq'); if (f) f.textContent = faqs.length;
     var ft = $('#stat-features'); if (ft) ft.textContent = features.length;
     db.collection('messages').get().then(function (snap) { var m = $('#stat-messages'); if (m) m.textContent = snap.size; }).catch(function () { var m = $('#stat-messages'); if (m) m.textContent = '?'; });
+    diag();
     db.collection('activity').orderBy('createdAt', 'desc').limit(5).get().then(function (snap) {
       var items = []; snap.forEach(function (d) { items.push(d.data()); });
       var icons = { login: 'fa-right-to-bracket', update_product: 'fa-box', add_product: 'fa-box-open', delete_product: 'fa-trash', update_faq: 'fa-circle-question', update_feature: 'fa-star', update_banner: 'fa-bullhorn', update_general: 'fa-sliders', update_translations: 'fa-language', unban: 'fa-user-check' };
