@@ -92,6 +92,25 @@ Bot yeniden başlat. Logda görmelisin:
 
 ## 8) Tek oturum (SSO) + Rastgele Paket
 
+## 9) Gerçek liderlik verisi + veri kaybı önlemi (bot tarafı)
+
+**Neden tablo simde kalıyordu:** site, Firestore'daki `leaderboard/*` belgelerini
+okur ama oraya yazan yoktu (botun Admin SDK'sı yok). Çözüm: bot 10 dk'da bir
+kendi Firebase hesabıyla yazar.
+
+1. Firebase Console → **Authentication → Add user:**
+   e-posta `bot@discord.risebunny.local` + güçlü şifre.
+2. `firestore.rules` içindeki leaderboard kuralı bu e-postayı doğrular —
+   rules dosyasını publish et (zaten eklendi).
+3. Bot `.env`: `FIREBASE_BOT_EMAIL=bot@discord.risebunny.local` +
+   `FIREBASE_BOT_SIFRE=<şifre>` → restart. Logda `[FB] leaderboard/rich senkron ✓`
+   görünmeli; 10 dk sonra site tabloları canlanır (önbellek 5 dk).
+
+**Render'da veri sıfırlanması:** ücretsiz Render diski geçicidir (ephemeral) —
+her restart/deploy DB dosyasını siler. Kalıcı çözüm: Render Disk (ücretli) veya
+VPS. Geçici güvence: `r!yedek` (DB dosyasını DM'e gönderir) +
+`r!yedek-yükle` (dosya ekiyle geri yükler). Önemli değişiklik öncesi yedek al.
+
 - Giriş tek noktadan: Discord (forumda form yok; `#/login` otomatik Discord'a atar).
 - risebunny → forum: çerez → Firebase otomatik giriş. Forum → risebunny:
   Firebase token `/api/session/restore` ile çereze çevrilir, tekrar giriş gerekmez.
@@ -101,7 +120,7 @@ Bot yeniden başlat. Logda görmelisin:
 - Canlı veri zinciri: `/api/stats` (top.gg → bot) + `/api/leaderboard` (bot → Firestore).
   İkisi de `BOT_API_URL` ister; yoksa simülasyon + ekranda sebebi yazar.
 
-## 8) Güvenlik notları
+## 10) Güvenlik notları
 
 - `rb_session` HttpOnly + Secure + imzalı (client tarafı okuyamaz/değiştiremez).
 - Fiyat hilesi imkânsız: tarayıcıdan gelen fiyat değil, botun `SHOP_CATALOG`'u geçerli.
