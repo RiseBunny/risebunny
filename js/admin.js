@@ -102,6 +102,7 @@
         if (tb === 'logs') loadLogs();
         if (tb === 'dashboard') loadDashboard();
         if (tb === 'bans') loadBans();
+        if (tb === 'forum' && window.loadForumUsers) window.loadForumUsers();
       });
     });
     var rb = $('#btn-refresh-bans'); if (rb) rb.addEventListener('click', loadBans);
@@ -439,65 +440,48 @@
     var FU = [];
 
     function mount() {
-      // 1. Zaten eklenmiş mi kontrol et
+      // Sekme admin.html'de statik durur — panel ve buton yoksa garanti altına al
       var existingTab = document.querySelector('[data-tab="forum"]');
       var existingPanel = document.querySelector('[data-panel="forum"]');
-
-      // 2. Sekme veya Panel yoksa DOM'a dinamik olarak güvenli şekilde ekle
-      if (!existingTab) {
-        var tabsWrap = $('.tabs') || $('.tab-list') || $$('.tab')[0]?.parentNode;
-        if (tabsWrap) {
-          var btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'tab';
-          btn.setAttribute('data-tab', 'forum');
-          btn.innerHTML = '<i class="fa-solid fa-users-gear"></i> Forum';
-          tabsWrap.appendChild(btn);
-          existingTab = btn;
-        }
+      if (existingTab && !existingTab.__rbFuBound) {
+        existingTab.__rbFuBound = true;
+        // Genel sekme yönlendiricisi zaten loadForumUsers'ı çağırır; yine de garanti:
+        existingTab.addEventListener('click', function () { loadForumUsers(); });
       }
-
-      if (!existingPanel) {
-        var panelsWrap = $('.tab-content') || $('.panels') || $$('.tab-panel')[0]?.parentNode;
-        if (panelsWrap) {
-          var sec = document.createElement('section');
-          sec.className = 'tab-panel';
-          sec.setAttribute('data-panel', 'forum');
-          sec.innerHTML = '<h2>🐰 Forum Kullanıcıları</h2>' +
-            '<p style="color:#9ca3af;font-size:13px;margin-bottom:12px">Yetki verme, BAN ve <b style="color:#ff6b6d">HESAP SİLME</b> işlemleri. Şifreler saklanmaz.</p>' +
-            '<div style="display:flex;gap:10px;margin-bottom:12px;">' +
-              '<input type="text" id="fu-search" placeholder="🔍 Kullanıcı ara (kullanıcı adı veya UID)..." style="flex:1;padding:10px 12px;border-radius:10px;border:1px solid #2a3348;background:#0e1219;color:#fff;outline:none">' +
-              '<button type="button" id="fu-refresh" class="btn btn-outline btn-sm"><i class="fa-solid fa-rotate"></i> Yenile</button>' +
-            '</div>' +
-            '<div id="forum-users"><div class="msg-empty">Yükleniyor...</div></div>';
-          panelsWrap.appendChild(sec);
-          existingPanel = sec;
-        }
+      // Arama + Yenile (statik #fu-search / #fu-refresh)
+      var si = $('#fu-search');
+      if (si && !si.__rbFuBound) {
+        si.__rbFuBound = true;
+        si.addEventListener('input', function (e) { renderForumUsers(e.target.value); });
       }
+      document.addEventListener('click', function (e) {
+        if (e.target && (e.target.id === 'fu-refresh' || (e.target.closest && e.target.closest('#fu-refresh')))) {
+          loadForumUsers();
+        }
+        if (e.target && e.target.id === 'fu-purge') {
+          var prg = e.target;
+          if (!prg.__rbPurgeBound) {
+            prg.__rbPurgeBound = true;
+            prg.addEventListener('click', forumPurge);
+          }
+        }
+      });
+    }
 
-      // 3. Sekme Tıklama Olayını Dinle
-      if (existingTab) {
-        existingTab.addEventListener('click', function () {
-          $$('.tab').forEach(function (x) { x.classList.remove('active'); });
-          $$('.tab-panel').forEach(function (x) { x.classList.remove('active'); });
-          existingTab.classList.add('active');
-          if (existingPanel) existingPanel.classList.add('active');
+    function forumPurge() {
+      var MASTER = ['oblLBCNGXEYF8plKq8KUr3m6o4f1', '1310366324731547798'];
+      if (!confirm('Kurucu hesapları hariç TÜM forum kullanıcıları silinecek. Emin misin?')) return;
+      if (!confirm('SON UYARI: Geri alınamaz! Devam edilsin mi?')) return;
+      db.collection('users').get().then(function (snap) {
+        var b = db.batch(); var n = 0;
+        snap.forEach(function (d) { if (MASTER.indexOf(d.id) === -1) { b.delete(d.ref); n++; } });
+        if (!n) { toast('Silinecek hesap yok.', 'info'); return; }
+        return b.commit().then(function () {
+          toast(n + ' hesap temizlendi', 'success');
+          logAction('forum_purge', n + ' hesap silindi');
           loadForumUsers();
         });
-      }
-
-      // 4. Arama ve Yenileme Dinleyicileri
-      document.addEventListener('input', function (e) {
-        if (e.target && e.target.id === 'fu-search') {
-          renderForumUsers(e.target.value);
-        }
-      });
-
-      document.addEventListener('click', function (e) {
-        if (e.target && (e.target.id === 'fu-refresh' || e.target.closest('#fu-refresh'))) {
-          loadForumUsers();
-        }
-      });
+      }).catch(function (e) { toast('Hata: ' + e.message, 'error'); });
     }
 
     // Firestore'dan Kullanıcıları Çek
@@ -619,8 +603,9 @@
       });
     }
 
-    // Global Yetki / Tetikleyici
+    // Global Yetki / Tetikleyici (admin-forum.js yedeği bunu görürse susar)
     window.loadForumUsers = loadForumUsers;
+    window.loadForumUsers.__rbMain = true;
 
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
       setTimeout(mount, 100);

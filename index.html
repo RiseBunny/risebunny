@@ -49,6 +49,7 @@
       <a href="forum.html">Forum</a>
     </nav>
     <div class="header-side">
+      <span data-auth-slot></span>
       <div class="lang-toggle" role="group" aria-label="Language">
         <button type="button" class="lang-btn" data-lang="tr"><span class="flag" aria-hidden="true">🇹🇷</span>TR</button>
         <button type="button" class="lang-btn active" data-lang="en"><span class="flag" aria-hidden="true">🇬🇧</span>EN</button>
@@ -110,8 +111,8 @@
     <div class="feed-line ban" id="ban-badge"><span data-i18n="bot_banned">USER BANNED</span></div>
   </div>
   <div class="row-cta">
-    <button class="btn solid" data-open-product="risebunny-bot"><span data-i18n="bot_cta">Invite!</span><i class="fa-solid fa-arrow-right"></i></button>
-    <a class="btn line" href="risebunny.html"><i class="fa-solid fa-robot"></i><span>Bot Page</span></a>
+    <button class="btn solid" data-open-product="risebunny-bot"><span data-i18n="bot_cta">Get It</span><i class="fa-solid fa-arrow-right"></i></button>
+    <a class="btn line" href="risebunny.html"><i class="fa-solid fa-robot"></i><span>Bot Sayfası</span></a>
     <button class="btn line" id="btn-replay-mod"><i class="fa-solid fa-rotate-right"></i><span data-i18n="bot_replay">Replay moderation</span></button>
   </div>
 </section>
@@ -160,16 +161,10 @@
       <button type="submit" class="btn solid" id="send-btn"><span data-i18n="btn_send">Send It</span><i class="fa-solid fa-arrow-right"></i></button>
       <p class="form-note" data-i18n="form_note">No spam, ever.</p>
     </form>
-  <aside class="con-side">
-<a class="discord-card" href="https://dsc.gg/risebunny" target="_blank" rel="noopener noreferrer" data-open-product="risebunny-bot" tabindex="0" role="button">
-<i class="fa-brands fa-discord"></i>
-<div>
-<b data-i18n="discord_title">Join the Discord</b>
-<small data-i18n="discord_desc">New builds drop on our Discord first. The invite link lands here.</small>
-</div>
-</a>
-<div class="social-links" id="social-links"></div>
-</aside>
+    <aside class="con-side">
+      <a class="discord-card" data-open-product="risebunny-bot" tabindex="0" role="button"><i class="fa-brands fa-discord"></i><div><b data-i18n="discord_title">Join the Discord</b><small data-i18n="discord_desc">New builds drop on our Discord first. The invite link lands here very soon.</small></div></a>
+      <div class="social-links" id="social-links"></div>
+    </aside>
   </div>
 </section>
 </main>
@@ -216,6 +211,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="js/mc-3d.js"></script>
 <script src="js/rb-data.js?v=8"></script>
+<script src="js/auth.js?v=2"></script>
 <script src="js/app.js?v=12"></script>
 </body>
 </html>
