@@ -20,6 +20,18 @@ window.RB_IS_ADMIN = function (u) {
   }
   return false;
 };
+/* Admin allowlist: sahip + 1310366324731547798 (UID veya Discord köprü e-postası). */
+window.ADMIN_UIDS = ['oblLBCNGXEYF8plKq8KUr3m6o4f1', '1310366324731547798'];
+window.ADMIN_DISCORD = ['985126554306773063', '1310366324731547798'];
+window.RB_IS_ADMIN = function (u) {
+  if (!u) return false;
+  if (window.ADMIN_UIDS.indexOf(u.uid) > -1) return true;
+  var em = String(u.email || '').toLowerCase();
+  for (var i = 0; i < window.ADMIN_DISCORD.length; i++) {
+    if (em === 'd' + window.ADMIN_DISCORD[i] + '@discord.risebunny.local') return true;
+  }
+  return false;
+};
 
 (function () {
 'use strict';

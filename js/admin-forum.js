@@ -14,7 +14,7 @@ function waitFB(cb, n) {
 waitFB(function () {
   if (!firebase.apps.length) { try { firebase.initializeApp(window.firebaseConfig); } catch (e) { return; } }
   var db = firebase.firestore();
-  var ADMIN_UID = 'oblLBCNGXEYF8plKq8KUr3m6o4f1';
+  var ADMIN_UIDS = ['oblLBCNGXEYF8plKq8KUr3m6o4f1', '1310366324731547798'];
 
   var FU = [];
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -113,7 +113,7 @@ waitFB(function () {
     db.collection('users').get().then(function (snap) {
       var chain = Promise.resolve();
       snap.forEach(function (d) {
-        if (d.id === ADMIN_UID) return;
+        if (ADMIN_UIDS.indexOf(d.id) > -1) return;
         chain = chain.then(function () { return doDelete(d.id).catch(function () {}); });
       });
       return chain;

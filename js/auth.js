@@ -46,6 +46,10 @@ function paint() {
   if (fs) fs.innerHTML = s.ok
     ? '<a href="/risebunny#hesabim" class="rb-dbtn" title="Hesabım"><img src="' + s.user.avatar + '" alt=""><span>' + s.user.username.replace(/[<>&"]/g, '') + '</span></a>'
     : '<a href="/api/auth/discord/start?next=/risebunny" class="rb-dbtn" title="Discord ile giriş"><i class="fa-brands fa-discord"></i><span>Discord</span></a>';
+  /* Forumda Discord oturumu varsa eski giriş butonunu gizle (köprü Firebase'e sokar) */
+  if (s.ok && $('#rb-nav-user')) {
+    $all('a.rb-loginbtn').forEach(function (b) { b.style.display = 'none'; });
+  }
   try { window.dispatchEvent(new CustomEvent('rb-session', { detail: s })); } catch (e) {}
 }
 
