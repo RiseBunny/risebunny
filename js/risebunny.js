@@ -312,6 +312,8 @@ function paintAccount(s) {
       '</p></div><a class="btn solid" href="/api/auth/discord/start?next=/risebunny"><i class="fa-brands fa-discord"></i><span>Discord ile Giriş</span></a></div>';
     var sh = $('#shop-box');
     if (sh) sh.hidden = true;
+    var cb = $('#coupon-box');
+    if (cb) cb.hidden = true;
     return;
   }
   var g = s.game;
@@ -332,6 +334,33 @@ function paintAccount(s) {
   box.innerHTML = html;
   var lo = $('#btn-logout2');
   if (lo) lo.addEventListener('click', function (e) { e.preventDefault(); fetch('/api/me?logout=1').then(function () { location.reload(); }); });
+  var cbx = $('#coupon-box');
+  if (cbx) cbx.hidden = false;
+  var cbtn = $('#coupon-btn');
+  if (cbtn && !cbtn.__rbBound) {
+    cbtn.__rbBound = true;
+    cbtn.addEventListener('click', function () {
+      var inp = $('#coupon-in');
+      var kod = (inp && inp.value || '').trim().toUpperCase();
+      if (!kod) { alert(LANG === 'tr' ? 'Kupon kodu gir.' : 'Enter a coupon code.'); return; }
+      cbtn.disabled = true;
+      fetch('/api/coupon/redeem', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kod }) })
+        .then(function (r) { return r.json().then(function (j) { return { status: r.status, j: j }; }); })
+        .then(function (res) {
+          if (res.j.ok) {
+            alert('✅ ' + (res.j.mesaj || 'Kupon kullanıldı!'));
+            fetch('/api/me').then(function (r) { return r.json(); }).then(function (j2) {
+              window.RBSession = { loading: false, ok: !!j2.ok, user: j2.user || null, fb: j2.fb || null, game: j2.game || null, botOnline: !!j2.botOnline };
+              paintAccount(window.RBSession);
+            }).catch(function () {});
+          } else {
+            alert('⚠️ ' + (res.j.error || 'Kupon kullanılamadı.'));
+          }
+          cbtn.disabled = false;
+        })
+        .catch(function () { alert('⚠️ Bot çevrimdışı olabilir.'); cbtn.disabled = false; });
+    });
+  }
   loadShop(s.botOnline);
 }
 function loadShop(botOnline) {

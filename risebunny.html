@@ -298,6 +298,14 @@
     </div>
   </div>
   <div id="acc-box"><p class="lb-note">…</p></div>
+  <div id="coupon-box" hidden style="margin-top:16px">
+    <h3 class="lb-h">🎟️ <span data-tr="Kupon Kullan" data-en="Redeem Coupon">Kupon Kullan</span></h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input id="coupon-in" type="text" maxlength="20" placeholder="RISE-V2" style="flex:1;min-width:160px;padding:11px 14px;border:1px solid var(--line);border-radius:8px;font-size:.95rem;text-transform:uppercase" aria-label="Kupon kodu">
+      <button class="btn solid sm" type="button" id="coupon-btn"><i class="fa-solid fa-ticket"></i> <span data-tr="Kullan" data-en="Redeem">Kullan</span></button>
+    </div>
+    <p class="lb-note" id="coupon-note" data-tr="V2.0 kuponu RISE-V2 — 250.000 Cash, hesap başına tek." data-en="V2.0 coupon RISE-V2 — 250,000 cash, one per account.">V2.0 kuponu RISE-V2 — 250.000 Cash, hesap başına tek.</p>
+  </div>
   <div id="shop-box" hidden>
     <h3 class="lb-h">🛒 <span data-tr="Site Mağazası (indirimli)" data-en="Site Shop (discounted)">Site Mağazası (indirimli)</span></h3>
     <div class="shop-grid" id="shop-grid"></div>
