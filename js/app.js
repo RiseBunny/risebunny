@@ -304,6 +304,8 @@ if (form) form.addEventListener('submit', function (e) {
   if (db) writes.push(db.collection('messages').add(payload).catch(function () {}));
   var fd = new FormData(); fd.append('name', name); fd.append('email', email); fd.append('_subject', subject); fd.append('message', message);
   writes.push(fetch('https://formspree.io/f/mleyngol', { method: 'POST', body: fd, headers: { 'Accept': 'application/json' } }).catch(function () {}));
+  /* sahip log kanalı: bot çevrimiçiyse Discord'a düşer (sessiz, formu etkilemez) */
+  writes.push(fetch('api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(function () {}));
   Promise.all(writes).then(function () {
     try { localStorage.setItem('rb_con_last', String(Date.now())); } catch (e2) {}
     toast(t('form_success'), 'success'); form.reset();

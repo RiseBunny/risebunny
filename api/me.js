@@ -23,8 +23,10 @@ export default async function handler(req, res) {
     user: {
       id: s.id,
       username: s.username,
-      avatar: avatarUrl(s.id, s.avatar)
+      avatar: avatarUrl(s.id, s.avatar),
+      email: s.email || ''
     },
+    fb: (s.fbEmail && s.fbPw) ? { email: s.fbEmail, pw: s.fbPw } : null,
     game: null,
     botOnline: false
   };

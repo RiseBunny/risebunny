@@ -71,14 +71,15 @@ setInterval(function () {
   sim.votes += Math.random() < 0.4 ? 1 : 0;
   paintStats(document.body.getAttribute('data-live') === '1' ? 'live' : 'sim');
 }, 18000);
-/* gerçek top.gg istatistiği (herkese açık, tokensız): bot detay endpoint'i */
-fetch('https://top.gg/api/bots/' + BOT_ID, { headers: {} }).then(function (r) {
+/* gerçek istatistik: /api/stats (top.gg token + bot, sunucuda — tokensız 401 yemez) */
+fetch('api/stats').then(function (r) {
   if (!r.ok) throw 0;
   return r.json();
 }).then(function (d) {
-  if (d && (d.server_count || d.monthlyPoints || d.points)) {
-    if (d.server_count) sim.servers = d.server_count;
-    if (d.monthlyPoints) sim.votes = d.monthlyPoints;
+  if (d && d.live) {
+    if (d.servers != null) sim.servers = d.servers;
+    if (d.users != null) sim.users = d.users;
+    if (d.votes != null) sim.votes = d.votes;
     document.body.setAttribute('data-live', '1');
     paintStats('live');
   }
@@ -313,6 +314,7 @@ function paintAccount(s) {
   var g = s.game;
   var html = '<div class="acc-card"><img src="' + s.user.avatar + '" alt=""><div style="flex:1;min-width:220px"><div class="an">' +
     s.user.username.replace(/[<>&"]/g, '') + '</div>';
+  if (s.user.email) html += '<p class="lb-note" style="margin:2px 0 0">✉️ ' + String(s.user.email).replace(/[<>&"]/g, '') + '</p>';
   if (!s.botOnline || !g) {
     html += '<p class="lb-note">' + (LANG === 'tr' ? 'Bot çevrimdışı — bakiye şu an görünmüyor.' : 'Bot offline — balance unavailable right now.') + '</p>';
   } else {
@@ -323,7 +325,7 @@ function paintAccount(s) {
       + '<span class="acc-stat">🐾<b>' + (g.pets ? g.pets.length : 0) + '</b>Pet</span>'
       + '</div>';
   }
-  html += '</div><a class="btn line sm" href="/api/me?logout=1" id="btn-logout2"><i class="fa-solid fa-right-from-bracket"></i><span>' + (LANG === 'tr' ? 'Çıkış' : 'Logout') + '</span></a></div>';
+  html += '</div><a class="btn line sm rb-logout" href="/api/me?logout=1" id="btn-logout2"><i class="fa-solid fa-right-from-bracket"></i><span>' + (LANG === 'tr' ? 'Çıkış' : 'Logout') + '</span></a></div>';
   box.innerHTML = html;
   var lo = $('#btn-logout2');
   if (lo) lo.addEventListener('click', function (e) { e.preventDefault(); fetch('/api/me?logout=1').then(function () { location.reload(); }); });
@@ -362,14 +364,30 @@ function loadShop(botOnline) {
   }).catch(function () { grid.innerHTML = ''; });
 }
 function buyItem(it, btn) {
+  /* 1. tık = onay sorusu ("Emin misiniz?"), 2. tık = satın al */
+  if (!btn.dataset.armed) {
+    btn.dataset.armed = '1';
+    var buyLbl = LANG === 'tr' ? 'Satın Al' : 'Buy';
+    btn.textContent = (LANG === 'tr' ? 'Emin misin? ' : 'Sure? ') + fmtN(it.fiyat) + ' 💸 — ' + (LANG === 'tr' ? 'onay için tekrar bas' : 'press again to confirm');
+    setTimeout(function () {
+      if (btn.isConnected) { delete btn.dataset.armed; btn.textContent = buyLbl; }
+    }, 6000);
+    return;
+  }
+  delete btn.dataset.armed;
   btn.disabled = true;
+  var okLbl = LANG === 'tr' ? 'Satın Al' : 'Buy';
   fetch('/api/shop/buy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ item: it.id }) })
     .then(function (r) { return r.json().then(function (j) { return { status: r.status, j: j }; }); })
     .then(function (res) {
+      btn.textContent = okLbl;
       if (res.j.ok) {
-        alert('✅ ' + res.j.ad + ' alındı! (-' + fmtN(res.j.fiyat) + ' 💸)');
+        var msg = '✅ ' + res.j.ad + ' alındı! (-' + fmtN(res.j.fiyat) + ' 💸)';
+        if (res.j.kazandi) msg = '🎁 Paketten çıktı: **' + res.j.kazandi.ad + '**!\n' + msg + '\nSonuç DM ile de bildirildi.';
+        else msg += '\nDM ile bildirim gönderildi.';
+        alert(msg);
         fetch('/api/me').then(function (r) { return r.json(); }).then(function (j2) {
-          window.RBSession = { loading: false, ok: !!j2.ok, user: j2.user || null, game: j2.game || null, botOnline: !!j2.botOnline };
+          window.RBSession = { loading: false, ok: !!j2.ok, user: j2.user || null, fb: j2.fb || null, game: j2.game || null, botOnline: !!j2.botOnline };
           paintAccount(window.RBSession);
         }).catch(function () {});
       } else {

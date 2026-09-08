@@ -33,8 +33,14 @@ Vercel → Project → Settings → Environment Variables (Production + Preview)
 | `SESSION_SECRET` | `openssl rand -hex 32` çıktısı | Oturum imza anahtarı |
 | `BOT_API_URL` | `https://SENIN-BOT-SUNUCUN:8000` | Botun herkese açık adresi (yoksa boş bırak → mağaza/bakiye kapalı görünür) |
 | `BOT_API_SECRET` | bot `.env`'indekiyle **aynı** | Bot-site paylaşılan sır |
+| `TOPGG_TOKEN` | top.gg panelindeki token | Canlı sunucu/oy sayıları için (yoksa simülasyon) |
+| `TOPGG_BOT_ID` | `1540401487581020252` | Varsayılanı kodda var |
+| `FIREBASE_API_KEY` | Firebase web anahtarı | Forum köprü hesabı için (varsayılanı kodda var) |
 
 Kaydet → **Redeploy** (env değişikliği yeniden dağıtım ister).
+
+> **Firebase Console:** Authentication → Sign-in method → **E-posta/Şifre SAĞLAYICISI AÇIK** olmalı
+> (forum Discord köprüsü buradan hesap açar). Kapalıysa giriş `login=hata` ile döner.
 
 ## 3) Bot `.env`
 
@@ -67,7 +73,24 @@ Bot yeniden başlat. Logda görmelisin:
 - `r!param` ile bot bakiyesi ↔ sitedeki bakiye aynı olmalı
 - Mağazadan ucuz pet al → bot logunda `[Mağaza] <id> satın aldı` görülmeli
 
-## 6) Güvenlik notları
+## 6) Sahip komutları (bot üzerinden site yönetimi)
+
+- `r!bakım [sebep]` → butonlu panel: **🤖 Bot bakımı** + **🌐 Site bakımı** aç/kapat.
+  Site bayrağı bot DB'de tutulur, site `/api/status` üzerinden okur.
+- `r!mağaza-yönet` → ürün seç (menü) → **Fiyat Değiştir** (sohbete sayı yaz) /
+  **Göster-Gizle**. Değişiklik site mağazasına anında yansır; gizli ürün alınamaz.
+- İkisi de yalnızca **sahip ID** (`U.SAHIP_ID`) kullanabilir; site admin paneli
+  ayrıca Firebase admin UID ile korunur.
+
+## 7) Owner-log bağlantıları (05 formu + satışlar + VIP)
+
+- Site 05 iletişim formu → `/api/contact` → bot `#owner-log` kanalına embed düşer
+  (bot çevrimdışıysa form yine kaydedilir, log atlanır).
+- Site mağaza satışı + pazar satışı + `r!pet al` → owner-log'a embed/satır düşer.
+- VIP bitimi: 60 sn süpürücü yakalar → owner-log + kullanıcıya **DM** atılır.
+- Gerekli: bot `.env`'de `BOT_API_SECRET`, `OWNER_LOG` kanal ID'si (`utils.js`).
+
+## 8) Güvenlik notları
 
 - `rb_session` HttpOnly + Secure + imzalı (client tarafı okuyamaz/değiştiremez).
 - Fiyat hilesi imkânsız: tarayıcıdan gelen fiyat değil, botun `SHOP_CATALOG`'u geçerli.

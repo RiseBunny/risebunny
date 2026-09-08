@@ -15,11 +15,17 @@ function chipHTML(u) {
     + '<a href="/api/me?logout=1" class="rb-logout" title="Çıkış"><i class="fa-solid fa-right-from-bracket"></i></a>'
     + '</span>';
 }
-// /api/me?logout=1 JSON döndürür; çıkışı link ile değil fetch ile yap
+// /api/me?logout=1 JSON döndürür; çıkışı link ile değil fetch ile yap (+ Firebase + yerel iz temizliği)
 document.addEventListener('click', function (e) {
   var a = e.target.closest ? e.target.closest('a.rb-logout') : null;
   if (!a) return;
   e.preventDefault();
+  try { localStorage.removeItem('rb_discord'); } catch (err) {}
+  try {
+    if (window.firebase && firebase.apps && firebase.apps.length && firebase.auth) {
+      firebase.auth().signOut().catch(function () {});
+    }
+  } catch (err2) {}
   fetch('/api/me?logout=1').then(function () { location.reload(); }).catch(function () { location.reload(); });
 });
 
@@ -45,10 +51,33 @@ function paint() {
 
 fetch('/api/me').then(function (r) { return r.ok ? r.json() : { ok: false }; })
   .then(function (j) {
-    window.RBSession = { loading: false, ok: !!j.ok, user: j.user || null, game: j.game || null, botOnline: !!j.botOnline };
+    window.RBSession = { loading: false, ok: !!j.ok, user: j.user || null, fb: j.fb || null, game: j.game || null, botOnline: !!j.botOnline };
+    if (j.ok && j.user) {
+      try { localStorage.setItem('rb_discord', JSON.stringify({ id: j.user.id, username: j.user.username })); } catch (e) {}
+    }
     paint();
+    forumBridge(window.RBSession);
   })
   .catch(function () { window.RBSession.loading = false; paint(); });
+
+/* Forum Firebase köprüsü: Discord oturumu varsa forum kimliği için Firebase'e de sok.
+   (Forum yazma yetkisi Firebase Auth ister; kimlik bilgileri /api/me'den, oturum sahibine özel gelir.) */
+function forumBridge(s) {
+  try {
+    if (!s.ok || !s.fb || !s.fb.email) return;
+    if (!document.getElementById('rb-nav-user') && location.pathname.indexOf('forum') === -1) return;
+    if (!window.firebase || !firebase.auth) return;
+    if (!firebase.apps.length) {
+      if (!window.firebaseConfig) return;
+      firebase.initializeApp(window.firebaseConfig);
+    }
+    var au = firebase.auth();
+    if (au.currentUser) return;
+    au.signInWithEmailAndPassword(s.fb.email, s.fb.pw).then(function () {
+      setTimeout(function () { location.reload(); }, 400);
+    }).catch(function () {});
+  } catch (e) {}
+}
 
 var css = '.rb-discord-chip{display:inline-flex;align-items:center;gap:8px}'
   + '.rb-discord-chip img{width:32px;height:32px;border-radius:50%;display:block;border:2px solid #5865F2}'

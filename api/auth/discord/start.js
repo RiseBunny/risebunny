@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   url.searchParams.set('client_id', CLIENT_ID);
   url.searchParams.set('redirect_uri', redirect);
   url.searchParams.set('response_type', 'code');
-  url.searchParams.set('scope', 'identify');
+  url.searchParams.set('scope', 'identify email');
   url.searchParams.set('state', Buffer.from(next).toString('base64url'));
   res.writeHead(302, { Location: url.toString() });
   res.end();

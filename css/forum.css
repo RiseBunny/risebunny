@@ -320,3 +320,8 @@ main#view { flex: 1 0 auto; }
   .rb-card { padding: 14px; gap: 12px; }
   .rb-userchip b { max-width: 70px; }
 }
+.flag-t{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:20px;padding:0 7px;border-radius:5px;font-size:.68rem;font-weight:800;letter-spacing:.06em;color:#fff;line-height:1}
+.flag-tr{background:linear-gradient(180deg,#E30A17,#b00712)}
+.flag-gb{background:linear-gradient(180deg,#012169,#3C3B6E)}
+.lang-btn .flag-t{filter:saturate(.55);opacity:.7}
+.lang-btn.active .flag-t,.lang-btn:hover .flag-t{filter:none;opacity:1}

@@ -54,7 +54,9 @@ function heal() {
       var ref = db.collection("users").doc(u.uid);
       var s = await ref.get();
       if (!s.exists) {
-        var uname = (window.cleanUname || cleanUname)((u.email || ("uye" + u.uid.slice(0, 6))).split("@")[0]);
+        var disc = null;
+        try { disc = JSON.parse(localStorage.getItem("rb_discord") || "null"); } catch (e2) {}
+        var uname = (window.cleanUname || cleanUname)(((disc && disc.username) || (u.email || ("uye" + u.uid.slice(0, 6)))).split("@")[0]);
         await ref.set({ username: uname, role: "member",
           avatar: "", banned: false, stats: { threads: 0, posts: 0, likes: 0 },
           createdAt: firebase.firestore.FieldValue.serverTimestamp(), lastLogin: firebase.firestore.FieldValue.serverTimestamp() })

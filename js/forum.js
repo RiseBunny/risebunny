@@ -156,7 +156,10 @@ function heal() {
       const ref = db.collection("users").doc(u.uid);
       const s = await ref.get();
       if (!s.exists) {
-        const uname = cleanUname((u.email || ("uye" + u.uid.slice(0,6))).split("@")[0]);
+        // Discord ile gelenlerde Discord adı tercih edilir (sanitize edilir)
+        let disc = null;
+        try { disc = JSON.parse(localStorage.getItem("rb_discord") || "null"); } catch (e2) {}
+        const uname = cleanUname(((disc && disc.username) || (u.email || ("uye" + u.uid.slice(0,6)))).split("@")[0]);
         await ref.set({ username: uname, role: "member",
           avatar:"", banned:false, stats:{threads:0,posts:0,likes:0},
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -399,15 +402,13 @@ async function renderProfile(username) {
   </div></div>`;
 }
 
-/* ── Giriş ── */
+/* ── Giriş (yalnızca Discord — eski kullanıcı adı/şifre formu kaldırıldı) ── */
 function renderLogin() {
-  view().innerHTML = `<div class="forum-wrap"><div class="rb-form">
+  view().innerHTML = `<div class="forum-wrap"><div class="rb-form" style="text-align:center">
     <h2>🐰 ${t("login")}</h2>
-    <input id="authId" placeholder="${t("ident")}" autocomplete="username">
-    <input id="authPw" type="password" placeholder="${t("pass")}" autocomplete="current-password">
-    <button class="rb-btn" onclick="RB.doLogin()">${t("enter")}</button>
+    <p style="opacity:.75;font-size:.9rem">${esc((window.RB_T && window.RB_T.discordOnly) || "Tek giriş yöntemi: Discord hesabın.")}</p>
+    <a class="rb-btn" href="/api/auth/discord/start?next=/risebunny" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none"><i class="fa-brands fa-discord"></i> Discord ile Giriş</a>
     <p id="authMsg" class="rb-msg"></p></div></div>`;
-  document.getElementById("authPw").addEventListener("keydown", e => { if (e.key==="Enter") RB.doLogin(); });
 }
 
 /* ── Yetkili Paneli ── */

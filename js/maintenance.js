@@ -78,6 +78,13 @@ function start() {
         }).catch(function () { if (n < 3) setTimeout(function () { check(n + 1); }, 1500); });
       }
       check(0);
+      /* Bot bayrağı (r!bakım → Site butonu): /api/status tek kaynaktan okunur,
+         admin girişi yine bakım ekranını kaldırır (decide içi). */
+      try {
+        fetch('api/status').then(function (r) { return r.json(); }).then(function (st) {
+          if (st && st.bakim) decide({ message: { tr: st.sebep || 'Site geçici olarak bakımda.', en: st.sebep || 'Site is under maintenance.' } });
+        }).catch(function () {});
+      } catch (e) {}
     } catch (e) {}
   });
 }
