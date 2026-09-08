@@ -5,7 +5,7 @@ window.RB_DATA = (function () {
       {
         id: 'risebunny-bot', icon: 'fa-brands fa-discord', pIcon: 'fa-brands fa-discord',
         platform: 'Discord', status: 'active', order: 0, name: 'RiseBunny Bot',
-        color: '#7c3aed', image: '', download: 'https://top.gg/bot/1152613347708125194',
+        color: '#7c3aed', image: '', download: 'https://top.gg/bot/1540401487581020252',
         desc: {
           en: 'Our multi-purpose Discord bot, live on top.gg: AI registration, subscriber roles, economy, moderation and automated raid protection — updated non-stop. Live the Future Today!',
           tr: "top.gg'de yayında olan çok amaçlı Discord botumuz: Yapay zeka kayıt, abone rol sistemi, ekonomi, moderasyon ve otomatik koruma — sürekli güncel. Geleceği Bugünden Yaşa!"
@@ -26,14 +26,14 @@ window.RB_DATA = (function () {
         features: { en: ['Performance-first', 'Deep customization'], tr: ['Performans odaklı', 'Derin özelleştirme'] }
       },
       {
-        id: 'rubidium-client', icon: 'fa-solid fa-gem', pIcon: 'fa-solid fa-cube',
-        platform: 'Minecraft', status: 'dev', order: 2, name: 'Rubidium Client',
-        color: '#10b981', image: '', download: '',
+        id: 'rubidium-client', icon: 'fa-solid fa-ghost', pIcon: 'fa-solid fa-ghost',
+        platform: 'Minecraft', status: 'dev', order: 2, name: 'Rubidium V4',
+        color: '#10b981', image: 'images/image.webp', download: '',
         desc: {
-          en: 'A performance-obsessed Minecraft client in the spirit of the legendary Sodium forks: more FPS, less lag, full control.',
-          tr: 'Efsanevi performans modlarının ruhunda, performans takıntılı bir Minecraft istemcisi: daha çok FPS, daha az lag, tam kontrol.'
+          en: 'A ghost client for closet players: legit-looking combat modules, in-game ClickGUI and ready configs — Vape V4 and Rise class, free.',
+          tr: 'Closet oyuncular için ghost client: legit görünen combat modülleri, oyun içi ClickGUI ve hazır configler — Vape V4 ve Rise ayarında, ücretsiz.'
         },
-        features: { en: ['FPS obsession', 'Sodium-fork spirit'], tr: ['FPS takıntısı', 'Sodium-fork ruhu'] }
+        features: { en: ['Ghost-focused modules', 'In-game ClickGUI'], tr: ['Ghost odaklı modüller', 'Oyun içi ClickGUI'] }
       },
       {
         id: 'risebrawl-v29', icon: 'fa-solid fa-star', pIcon: 'fa-solid fa-star',

@@ -34,8 +34,9 @@ async function loadCurrent(uid) {
   return CURRENT;
 }
 function saveCred(uid, password) {
-  return db.collection("creds").doc(uid).set({ password: password,
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }).catch(()=>{});
+  /* SECURITY FIX: plaintext sifre ASLA saklanmaz. Firebase Auth zaten hashler.
+     Eski 'creds' koleksiyonunu Firestore'dan sil. Bu fonksiyon bilerek no-op. */
+  return Promise.resolve();
 }
 function newProfile(uid, username, role) {
   return db.collection("users").doc(uid).set({

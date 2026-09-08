@@ -1,4 +1,7 @@
-/*! RiseBunny — Bakım Modu + Banner X (v5) | admin.html hariç tüm sayfalar */
+/*! RiseBunny — Bakım Modu + Banner X (v6 GÜVENLİK) | admin.html hariç tüm sayfalar
+     v6: isAdminish() localStorage/sessionStorage anahtarları KONSOLDAN SAHTELENEBİLİYORDU
+         (her ziyaretçi bakım modunu atlatıyordu). Artık yalnızca gerçek Firebase
+         Auth oturumu (uid === ADMIN_UID) bakım ekranını geçersiz kılabilir. */
 (function () {
 'use strict';
 if (window.__rbMntLoaded) return; window.__rbMntLoaded = true;
@@ -13,16 +16,17 @@ var CONF = {
   appId: "1:203829901581:web:66d532c52155db4aea9844"
 };
 var FORCE = /[?&]mnt=1/.test(location.search);
-console.log('[RB] maintenance.js v5 yüklendi ✓');
+console.log('[RB] maintenance.js v6 yüklendi ✓');
 
 var ov = document.createElement('div');
 ov.id = 'rb-maintenance';
-ov.style.cssText = 'display:none;position:fixed;inset:0;z-index:2147483647;background:#050507;color:#fff;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:24px;font-family:system-ui,sans-serif';
-ov.innerHTML = '<div style="font-size:64px;animation:rbPulse 1.6s infinite">🐰</div>' +
-  '<h1 style="margin:12px 0 4px;font-size:26px">🔧 Bakım Modu</h1>' +
-  '<p id="rb-mnt-msg" style="color:#9ca3af;max-width:420px;line-height:1.6"></p>' +
-  '<p style="color:#4b5563;font-size:12px;margin-top:24px">© 2026 RiseBunny</p>' +
-  '<style>@keyframes rbPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}</style>';
+ov.style.cssText = 'display:none;position:fixed;inset:0;z-index:2147483647;background:#ffffff;color:#111827;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:24px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif';
+ov.innerHTML = '<img src="images/bot.svg" alt="RiseBunny" style="width:68px;height:68px;margin-bottom:20px;animation:rbPulse 2s infinite">' +
+  '<span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#2563eb;background:#eff6ff;padding:4px 12px;border-radius:999px;border:1px solid #bfdbfe;margin-bottom:12px;display:inline-block">🔧 Bakım Modu / Maintenance</span>' +
+  '<h1 style="margin:8px 0 12px;font-size:28px;font-weight:800;letter-spacing:-.02em;color:#111827">Rise Beyond Limits.</h1>' +
+  '<p id="rb-mnt-msg" style="color:#4b5563;max-width:480px;line-height:1.6;font-size:16px;margin:0 auto"></p>' +
+  '<p style="color:#9ca3af;font-size:13px;margin-top:32px">© 2026 RiseBunny Software. Tüm hakları saklıdır.</p>' +
+  '<style>@keyframes rbPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}</style>';
 function mount() { if (!document.getElementById('rb-maintenance')) (document.body || document.documentElement).appendChild(ov); }
 if (document.body) mount(); else document.addEventListener('DOMContentLoaded', mount);
 
@@ -32,17 +36,11 @@ function showMaintenance(m) {
   var el = document.getElementById('rb-mnt-msg');
   if (el) el.textContent = msg[lang] || msg.tr || msg.en || 'Site geçici olarak bakımda. / Site is under maintenance.';
   ov.style.display = 'flex';
-  document.body.style.overflow = 'hidden';
+  try { document.body.style.overflow = 'hidden'; } catch (e) {}
 }
-function isAdminish() {
-  try {
-    var tok = sessionStorage.getItem('rb_admin_token');
-    var tim = parseInt(sessionStorage.getItem('rb_admin_time') || '0', 10);
-    if (tok && (Date.now() - tim < 15 * 60 * 1000)) return true;
-    var live = parseInt(localStorage.getItem('rb_admin_live') || '0', 10);
-    if (live && (Date.now() - live < 15 * 60 * 1000)) return true;
-  } catch (e) {}
-  return false;
+function hideMaintenance() {
+  ov.style.display = 'none';
+  try { document.body.style.overflow = ''; } catch (e) {}
 }
 function loadSDK(src) { return new Promise(function (res) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = res; document.head.appendChild(s); }); }
 
@@ -59,17 +57,20 @@ function start() {
       try { app = firebase.apps.length ? firebase.app() : firebase.initializeApp(window.firebaseConfig, 'rb-mnt'); }
       catch (e) { try { app = firebase.app('rb-mnt'); } catch (e2) { return; } }
       var db = app.firestore(), auth = app.auth();
+      /* 🔑 GÜVENLİK v6: Bakım kararını SADECE gerçek Firebase Auth oturumu
+         belirler. localStorage/sessionStorage anahtarları artık yok sayılır —
+         konsoldan `localStorage.setItem('rb_admin_live', ...)` yazmak işe yaramaz. */
       function decide(data) {
-        if (!FORCE && isAdminish()) return;
-        var decided = false;
-        var to = setTimeout(function () { if (!decided) { decided = true; showMaintenance(data); } }, 1200);
+        if (FORCE) { showMaintenance(data); return; }   /* ?mnt=1 önizleme */
         try {
+          var decided = false;
+          /* Ziyaretçiye anında göster (admin girişi halledilirse kapatılır) */
+          showMaintenance(data);
           auth.onAuthStateChanged(function (u) {
-            if (decided) return; decided = true; clearTimeout(to);
-            if (!FORCE && u && u.uid === ADMIN_UID) return;
-            showMaintenance(data);
+            if (u && u.uid === ADMIN_UID) { decided = true; hideMaintenance(); }
+            else if (!decided) { decided = true; showMaintenance(data); }
           });
-        } catch (e) { if (!decided) { decided = true; clearTimeout(to); showMaintenance(data); } }
+        } catch (e) { showMaintenance(data); }
       }
       function check(n) {
         db.collection('config').doc('maintenance').get().then(function (s) {
@@ -113,7 +114,6 @@ document.addEventListener('click', function (e) {
   hideBanner(ban);
 }, true);
 function patchBanner() {
-  var admin = isAdminish();
   var saved = null; try { saved = sessionStorage.getItem('rb_banner_hidden_text'); } catch (e) {}
   var nodes = document.querySelectorAll('[id*="banner" i], [class*="banner" i], [id*="duyuru" i], [class*="duyuru" i]');
   for (var i = 0; i < nodes.length; i++) {
@@ -122,7 +122,7 @@ function patchBanner() {
     var txt = (el.textContent || '').trim().slice(0, 120);
     if (!txt || txt.length < 3) continue;
     try {
-      if (!admin && saved && saved === txt) { el.style.display = 'none'; continue; }
+      if (saved && saved === txt) { el.style.display = 'none'; continue; }
       if (saved && saved !== txt) sessionStorage.removeItem('rb_banner_hidden_text');
       var btns = el.querySelectorAll('button, [class*="close" i], .fa-xmark, .fa-times');
       if (!btns.length) {

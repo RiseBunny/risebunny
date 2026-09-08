@@ -1,288 +1,345 @@
+/*! RiseBunny app v12 — Lusion-minimal UI (secure render, original copy) */
 (function () {
-  'use strict';
-  var $ = function (s, c) { return (c || document).querySelector(s); };
-  var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
-  var db = null;
-  var fconf = window.firebaseConfig || null;
-  if (window.firebase && fconf && fconf.projectId) {
-    try {
-      if (!firebase.apps.length) firebase.initializeApp(fconf);
-      db = firebase.firestore();
-    } catch (e) { db = null; }
+'use strict';
+var $ = function (s, c) { return (c || document).querySelector(s); };
+var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function safeUrl(u, allowData) {
+  u = String(u || '').trim();
+  if (!u) return '';
+  if (/^javascript:/i.test(u) || /^data:text\/html/i.test(u) || /^vbscript:/i.test(u)) return '';
+  if (allowData && /^data:image\/(png|jpeg|webp|gif);base64,/i.test(u)) return u;
+  if (/^https:\/\//i.test(u) || /^\//.test(u) || /^#/.test(u)) return u;
+  if (/^mailto:/i.test(u)) return u;
+  return '';
+}
+function clean(v) { return (typeof v === 'string' && v.trim() !== '') ? v.trim() : ''; }
+
+var I18N_DICT = {
+  en: { nav_arena: 'Minecraft', nav_bot: 'Mod Bot', nav_sys: 'Systems', nav_faq: 'FAQ', nav_contact: 'Contact',
+    hero_badge: 'RiseBunny Software',
+    hero_title: 'Rise Beyond Limits.',
+    hero_sub: 'Discord bots, Minecraft clients, Brawl Stars projects — one bunny crew.',
+    btn_explore: 'Explore the Lab', btn_learn: 'Meet the Crew', scroll_cue: 'Scroll to explore',
+    sec_mc: 'Minecraft',
+    arena_title: 'Rubidium V4',
+    arena_desc: 'A ghost client for closet players: legit-looking combat modules, in-game ClickGUI and ready configs — Vape V4 and Rise class, free.',
+    arena_f1: 'Ghost-focused', arena_f2: 'ClickGUI + configs', arena_f3: 'Fully free',
+    arena_cta: 'Get It', arena_hint: 'Scroll — the warrior behind moves with you.',
+    bot_title: 'RiseBunny Bot — Live 24/7.',
+    bot_desc: 'Our multi-purpose Discord bot, live on top.gg: AI registration, subscriber roles, economy, moderation and automated raid protection — updated non-stop.',
+    demo_msg1: 'anyone up for ranked?', demo_msg2: 'you suck',
+    bot_flagged: 'Message flagged → removed.', bot_banned: 'USER BANNED',
+    bot_cta: 'Get It', bot_replay: 'Replay moderation',
+    feat_title: 'Why the Bunny Never Sleeps', feat_sub: 'Four obsessions behind every release.',
+    faq_title: 'Questions? We Answer Fast.',
+    con_title: 'Got an Idea? Let Us Build It.', con_sub: 'Feedback, collabs, bug reports or wild ideas — the inbox is open.',
+    lbl_name: 'Name', lbl_email: 'Email', lbl_subject: 'Subject', lbl_message: 'Message',
+    ph_name: 'Your name', ph_email: 'you@example.com', ph_subject: 'Subject', ph_message: 'Your message...',
+    btn_send: 'Send It', form_success: 'Message landed!', form_mailto: 'Opening your mail app…',
+    form_note: 'Encrypted end-to-end. No spam, ever.',
+    form_rate: 'Please wait a minute before sending again.', form_invalid: 'Please fill all fields correctly.',
+    discord_title: 'Join the War Room', discord_desc: 'New builds drop on our Discord first. The invite link lands here very soon.',
+    footer_nav: 'Navigation', footer_legal: 'Legal',
+    privacy: 'Privacy Policy', terms: 'Terms of Service',
+    copyright: '© 2026 RiseBunny. All rights reserved.', footer_slogan: 'Rise Beyond Limits.',
+    modal_features: 'Under the Hood', btn_community: 'Join the Crew', btn_download: 'Cooking…', btn_download_now: 'Get It',
+    status_dev: 'In the Lab', status_project: 'Prototype', status_active: 'Live 24/7' },
+  tr: { nav_arena: 'Minecraft', nav_bot: 'Mod Bot', nav_sys: 'Sistemler', nav_faq: 'SSS', nav_contact: 'İletişim',
+    hero_badge: 'RiseBunny Software',
+    hero_title: 'Sınırların Ötesine Yüksel.',
+    hero_sub: 'Discord botları, Minecraft istemcileri, Brawl Stars projeleri — tek tavşan ekibi.',
+    btn_explore: 'Laboratuvarı Keşfet', btn_learn: 'Ekiple Tanış', scroll_cue: 'Keşfetmek için kaydır',
+    sec_mc: 'Minecraft',
+    arena_title: 'Rubidium V4',
+    arena_desc: 'Closet oyuncular için ghost client: legit görünen combat modülleri, oyun içi ClickGUI ve hazır configler — Vape V4 ve Rise ayarında, ücretsiz.',
+    arena_f1: 'Ghost odaklı', arena_f2: 'ClickGUI + configler', arena_f3: 'Tamamen ücretsiz',
+    arena_cta: 'İndir', arena_hint: 'Kaydır — arkadaki savaşçı seninle hareket eder.',
+    bot_title: 'RiseBunny Bot — 7/24 Yayında.',
+    bot_desc: "top.gg'de yayında olan çok amaçlı Discord botumuz: Yapay zeka kayıt, abone rol sistemi, ekonomi, moderasyon ve otomatik koruma — sürekli güncel.",
+    demo_msg1: 'ranked giren var mı?', demo_msg2: 'lanet olsun / küfür',
+    bot_flagged: 'Mesaj işaretlendi → silindi.', bot_banned: 'KULLANICI BANLANDI',
+    bot_cta: 'İndir', bot_replay: 'Moderasyonu tekrarla',
+    feat_title: 'Tavşan Neden Uyumaz?', feat_sub: 'Her sürümün arkasındaki dört takıntı.',
+    faq_title: 'Sorun mu Var? Hızlı Cevaplar.',
+    con_title: 'Fikrin mi Var? Biz İnşa Edelim.', con_sub: 'Geri bildirim, iş birliği, hata raporu ya da çılgın fikirler — kutu açık.',
+    lbl_name: 'İsim', lbl_email: 'E-posta', lbl_subject: 'Konu', lbl_message: 'Mesaj',
+    ph_name: 'Adınız', ph_email: 'ornek@eposta.com', ph_subject: 'Konu', ph_message: 'Mesajınız...',
+    btn_send: 'Gönder', form_success: 'Mesaj ulaştı!', form_mailto: 'E-posta uygulaması açılıyor…',
+    form_note: 'Uçtan uca şifreli. Spam yok, asla.',
+    form_rate: 'Tekrar göndermeden önce bir dakika bekle.', form_invalid: 'Lütfen tüm alanları doğru doldur.',
+    discord_title: 'Komuta Merkezine Katıl', discord_desc: 'Yeni buildler ilk olarak Discord sunucumuzda paylaşılır. Davet linki çok yakında burada.',
+    footer_nav: 'Navigasyon', footer_legal: 'Yasal',
+    privacy: 'Gizlilik Politikası', terms: 'Kullanım Şartları',
+    copyright: '© 2026 RiseBunny. Tüm hakları saklıdır.', footer_slogan: 'Sınırların Ötesine Yüksel.',
+    modal_features: 'Kaputun Altında', btn_community: 'Ekibe Katıl', btn_download: 'Pişiyor…', btn_download_now: 'İndir',
+    status_dev: 'Laboratuvarda', status_project: 'Prototip', status_active: '7/24 Yayında' }
+};
+
+var db = null;
+try {
+  if (window.firebase && window.firebaseConfig && window.firebaseConfig.projectId) {
+    if (!firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
+    db = firebase.firestore();
   }
-  var FORMSPREE = 'https://formspree.io/f/mleyngol';
-  var RD = window.RB_DATA || { products: [], faqs: [], features: [], i18n: { en: {}, tr: {} } };
-  var PRODUCTS = JSON.parse(JSON.stringify(RD.products || []));
-  var FAQS = JSON.parse(JSON.stringify(RD.faqs || []));
-  var FEATURES = JSON.parse(JSON.stringify(RD.features || []));
-  var I18N = {
-    en: JSON.parse(JSON.stringify((RD.i18n && RD.i18n.en) || {})),
-    tr: JSON.parse(JSON.stringify((RD.i18n && RD.i18n.tr) || {}))
-  };
-  var BASE_I18N = JSON.parse(JSON.stringify(I18N));
-  var DEFAULT_CONFIG = { defaultLang: 'en', fallbackEmail: 'info@risebunny.com', logo: '', social: { discord: '', telegram: '', youtube: '', tiktok: '' } };
-  var CFG = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
-  var LANG = 'en';
-  var BANNER = null;
-  function clean(v) { return (typeof v === 'string' && v.trim() !== '') ? v.trim() : ''; }
-  function mergeTrans(target, src) {
-    if (!src || !target) return;
-    Object.keys(src).forEach(function (k) { var v = clean(src[k]); if (v) target[k] = v; });
+} catch (e) { db = null; }
+
+var RD = window.RB_DATA || { products: [], faqs: [], features: [] };
+var PRODUCTS = JSON.parse(JSON.stringify(RD.products || []));
+var FAQS = JSON.parse(JSON.stringify(RD.faqs || []));
+var FEATURES = JSON.parse(JSON.stringify(RD.features || []));
+var OVR = { en: {}, tr: {} };
+var CFG = { defaultLang: 'en', fallbackEmail: 'info@risebunny.com', social: {} };
+var BANNER = null;
+var LANG = localStorage.getItem('rb-lang') || 'en';
+if (LANG !== 'tr' && LANG !== 'en') LANG = 'en';
+
+function t(k) {
+  var o = OVR[LANG] && OVR[LANG][k];
+  if (o) return o;
+  return (I18N_DICT[LANG] && I18N_DICT[LANG][k]) || I18N_DICT.en[k] || k;
+}
+
+/* Systems rows (admin Features) */
+function renderSystems() {
+  var grid = $('#sys-grid'); if (!grid) return;
+  grid.innerHTML = '';
+  var sorted = FEATURES.slice().sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
+  if (!sorted.length) { grid.textContent = '—'; return; }
+  sorted.forEach(function (f, i) {
+    var li = document.createElement('li');
+    var b = document.createElement('b'); b.textContent = '0' + (i + 1); li.appendChild(b);
+    var s = document.createElement('span'); s.textContent = (f.title && (f.title[LANG] || f.title.en)) || ''; li.appendChild(s);
+    var d = document.createElement('span'); d.textContent = (f.desc && (f.desc[LANG] || f.desc.en)) || ''; li.appendChild(d);
+    grid.appendChild(li);
+  });
+}
+function renderSSS() {
+  var list = $('#sss-list'); if (!list) return;
+  list.innerHTML = '';
+  FAQS.slice().sort(function (a, b) { return (a.order || 0) - (b.order || 0); }).forEach(function (f) {
+    var item = document.createElement('div'); item.className = 'faq-item';
+    var q = document.createElement('button'); q.type = 'button'; q.className = 'faq-q';
+    q.appendChild(document.createTextNode((f.q && (f.q[LANG] || f.q.en)) || ''));
+    var ic = document.createElement('i'); ic.className = 'fa-solid fa-plus'; q.appendChild(ic);
+    var a = document.createElement('div'); a.className = 'faq-a';
+    var w = document.createElement('div'); var pp = document.createElement('p');
+    pp.textContent = (f.a && (f.a[LANG] || f.a.en)) || '';
+    w.appendChild(pp); a.appendChild(w);
+    q.addEventListener('click', function () { item.classList.toggle('open'); });
+    item.appendChild(q); item.appendChild(a); list.appendChild(item);
+  });
+}
+function renderSocials() {
+  var el = $('#social-links'); if (!el) return;
+  el.innerHTML = '';
+  var icons = { discord: 'fa-brands fa-discord', telegram: 'fa-brands fa-telegram', youtube: 'fa-brands fa-youtube', tiktok: 'fa-brands fa-tiktok' };
+  Object.keys(CFG.social || {}).forEach(function (k) {
+    var url = safeUrl(CFG.social[k], false);
+    if (!url || !icons[k]) return;
+    var a = document.createElement('a'); a.className = 'social-link'; a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.setAttribute('aria-label', k);
+    var i = document.createElement('i'); i.className = icons[k]; a.appendChild(i); el.appendChild(a);
+  });
+}
+function renderBanner() {
+  var el = $('#site-banner'); if (!el) return;
+  var closed = false;
+  try { closed = sessionStorage.getItem('banner_closed') === '1'; } catch (e) {}
+  if (!BANNER || !BANNER.enabled || closed) { el.hidden = true; document.body.classList.remove('has-banner'); return; }
+  var text = (BANNER.text && (BANNER.text[LANG] || BANNER.text.en)) || '';
+  if (!text) { el.hidden = true; return; }
+  el.className = 'site-banner type-' + (/^(info|warning|success)$/.test(BANNER.type) ? BANNER.type : 'info');
+  el.innerHTML = '';
+  var sp = document.createElement('span'); sp.textContent = text; el.appendChild(sp);
+  var link = safeUrl(BANNER.link, false);
+  if (link) { var a = document.createElement('a'); a.href = link; a.target = '_blank'; a.rel = 'noopener'; a.textContent = '→'; el.appendChild(a); }
+  var x = document.createElement('button'); x.type = 'button'; x.className = 'banner-close'; x.setAttribute('aria-label', 'Close');
+  x.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+  x.addEventListener('click', function () { el.hidden = true; document.body.classList.remove('has-banner'); try { sessionStorage.setItem('banner_closed', '1'); } catch (e) {} });
+  el.appendChild(x);
+  el.hidden = false; document.body.classList.add('has-banner');
+}
+function openModal(id) {
+  var p = null;
+  for (var i = 0; i < PRODUCTS.length; i++) if (PRODUCTS[i].id === id) p = PRODUCTS[i];
+  if (!p) return;
+  $('#m-title').textContent = String(p.name || '');
+  var tg = $('#m-tags'); tg.innerHTML = '';
+  var st = document.createElement('span'); st.className = 'status-pill st-' + ((/^(active|dev|project)$/.test(p.status)) ? p.status : 'dev'); st.textContent = t('status_' + p.status); tg.appendChild(st);
+  var pf = document.createElement('span'); pf.className = 'tag-plat'; pf.textContent = String(p.platform || ''); tg.appendChild(pf);
+  $('#m-desc').textContent = (p.desc && (p.desc[LANG] || p.desc.en)) || '';
+  var feats = (p.features && (p.features[LANG] || p.features.en)) || [];
+  $('#m-feat-title').textContent = feats.length ? t('modal_features') : '';
+  var fe = $('#m-features'); fe.innerHTML = '';
+  feats.slice(0, 12).forEach(function (f) { var d = document.createElement('div'); d.className = 'mf'; var ic = document.createElement('i'); ic.className = 'fa-solid fa-check'; d.appendChild(ic); d.appendChild(document.createTextNode(String(f))); fe.appendChild(d); });
+  var act = $('#modal-actions'); act.innerHTML = '';
+  var dl = safeUrl(p.download, false);
+  if (dl) { var a = document.createElement('a'); a.className = 'btn solid sm'; a.href = dl; a.target = '_blank'; a.rel = 'noopener'; a.textContent = '⬇ ' + t('btn_download_now'); act.appendChild(a); }
+  else { var b = document.createElement('button'); b.type = 'button'; b.className = 'btn solid sm'; b.disabled = true; b.textContent = t('btn_download'); act.appendChild(b); }
+  var c2 = document.createElement('a'); c2.className = 'btn line sm'; c2.href = '#iletisim'; c2.textContent = t('btn_community');
+  c2.addEventListener('click', closeModal); act.appendChild(c2);
+  $('#modal').classList.add('open');
+}
+function closeModal() { var m = $('#modal'); if (m) m.classList.remove('open'); }
+var mc = $('#modal-close'); if (mc) mc.addEventListener('click', closeModal);
+var mo = $('#modal'); if (mo) mo.addEventListener('click', function (e) { if (e.target === mo) closeModal(); });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+document.addEventListener('click', function (e) {
+  var b = e.target.closest ? e.target.closest('[data-open-product]') : null;
+  if (!b) return;
+  var pid = b.getAttribute('data-open-product');
+  var p = null;
+  for (var i = 0; i < PRODUCTS.length; i++) if (PRODUCTS[i].id === pid) p = PRODUCTS[i];
+  var dl = p ? safeUrl(p.download, false) : '';
+  if (dl) {
+    window.open(dl, '_blank', 'noopener');
+    return;
   }
-  function t(k) {
-    return clean(I18N[LANG] && I18N[LANG][k]) || clean(I18N.en && I18N.en[k]) || clean(BASE_I18N[LANG] && BASE_I18N[LANG][k]) || clean(BASE_I18N.en && BASE_I18N.en[k]) || k;
-  }
-  window.RB = {
-    setLang: function (l) {
+  openModal(pid);
+});
+
+function toast(msg, type) {
+  type = /^(success|error|info)$/.test(type) ? type : 'info';
+  var el = document.createElement('div'); el.className = 'toast toast-' + type;
+  var sp = document.createElement('span'); sp.textContent = String(msg);
+  el.appendChild(sp);
+  var w = $('#toast-wrap'); if (w) w.appendChild(el);
+  requestAnimationFrame(function () { el.classList.add('show'); });
+  setTimeout(function () { el.classList.remove('show'); setTimeout(function () { el.remove(); }, 350); }, 4200);
+}
+
+function setLang(l) {
+  LANG = (l === 'tr') ? 'tr' : 'en';
+  try { localStorage.setItem('rb-lang', LANG); } catch (e) {}
+  document.documentElement.lang = LANG;
+  document.title = LANG === 'tr' ? 'RiseBunny | Sınırların Ötesine Yüksel' : 'RiseBunny | Rise Beyond Limits';
+  $$('[data-i18n]').forEach(function (el) { var v = t(el.getAttribute('data-i18n')); if (v) el.textContent = v; });
+  $$('[data-i18n-ph]').forEach(function (el) { el.placeholder = t(el.getAttribute('data-i18n-ph')); });
+  $$('.lang-btn').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-lang') === LANG); });
+  renderSystems(); renderSSS(); renderBanner();
+}
+window.RB = { setLang: setLang };
+$$('.lang-btn').forEach(function (b) { b.addEventListener('click', function () { setLang(b.getAttribute('data-lang')); }); });
+
+/* secret footer entry → admin panel (5 taps, sessiz + 5 dk tek kullanımlık jeton)
+   Gizlilik: başarıda bile görsel ipucu YOK — doğrudan admin.html'e geçilir.
+   admin.html + firebase-config.js jetonu + zamanı doğrular; süre dolmuşsa 404. */
+(function secretEntry() {
+  var foot = document.getElementById('foot-base') || document.querySelector('.site-footer .footer-base') || document.querySelector('.site-footer') || document.querySelector('footer.site-footer');
+  if (!foot) return;
+  var taps = 0, timer = null;
+  foot.addEventListener('click', function () {
+    taps++;
+    clearTimeout(timer);
+    timer = setTimeout(function () { taps = 0; }, 2500);
+    if (taps >= 5) {
+      taps = 0;
       try {
-        LANG = (l === 'tr') ? 'tr' : 'en';
-        document.documentElement.lang = LANG;
-        document.title = (LANG === 'tr') ? 'RiseBunny | Sınırların Ötesine Yüksel' : 'RiseBunny | Rise Beyond Limits';
-        $$('[data-i18n]').forEach(function (el) { var v = t(el.getAttribute('data-i18n')); if (v) el.innerHTML = v; });
-        $$('[data-i18n-ph]').forEach(function (el) { var v = t(el.getAttribute('data-i18n-ph')); if (v) el.placeholder = v; });
-        $$('.lang-btn').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-lang') === LANG); });
-        renderProducts(); renderFeatures(); renderFAQ(); renderBanner();
-      } catch (e) { toast('Dil hatası: ' + e.message, 'error'); }
-    }
-  };
-  function renderProducts() {
-    var grid = $('#products-grid');
-    if (!grid) return;
-    try {
-      var sorted = PRODUCTS.slice().sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
-      if (!sorted.length) { grid.innerHTML = '<p style="text-align:center;color:var(--muted);padding:30px">—</p>'; return; }
-      grid.innerHTML = sorted.map(function (p, i) {
-        var desc = (p.desc && (p.desc[LANG] || p.desc.en)) || '';
-        return '<article class="product-card reveal" style="--d:' + (i * 70) + 'ms;--pc:' + (p.color || '#06b6d4') + '" data-id="' + p.id + '" tabindex="0" role="button"><div class="card-banner"><div class="banner-fallback"><i class="' + (p.icon || 'fa-solid fa-box') + '"></i></div>' + (p.image ? '<img src="' + p.image + '" alt="' + p.name + '" loading="lazy" onerror="this.classList.add(\'broken\')">' : '') + '<span class="status-badge status-' + p.status + '">' + t('status_' + p.status) + '</span></div><div class="card-body"><div class="card-top"><h3>' + p.name + '</h3><span class="platform"><i class="' + (p.pIcon || p.icon || 'fa-solid fa-box') + '"></i>' + p.platform + '</span></div><p>' + desc + '</p><div class="card-footer"><span>' + t('view_details') + '</span><i class="fa-solid fa-arrow-right"></i></div></div></article>';
-      }).join('');
-      $$('#products-grid .product-card').forEach(function (c) {
-        var open = function () { openModal(c.getAttribute('data-id')); };
-        c.addEventListener('click', open);
-        c.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
-      });
-      observeReveals();
-    } catch (e) { toast('Ürün hatası: ' + e.message, 'error'); }
-  }
-  function renderFeatures() {
-    var grid = $('#features-grid');
-    if (!grid) return;
-    var sorted = FEATURES.slice().sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
-    grid.innerHTML = sorted.map(function (f, i) {
-      var title = (f.title && (f.title[LANG] || f.title.en)) || '';
-      var desc = (f.desc && (f.desc[LANG] || f.desc.en)) || '';
-      return '<div class="feature-card reveal" style="--d:' + (i * 60) + 'ms;--fc:' + (f.color || '#06b6d4') + '"><div class="feature-icon"><i class="' + f.icon + '"></i></div><h3>' + title + '</h3><p>' + desc + '</p></div>';
-    }).join('');
-    observeReveals();
-  }
-  function renderFAQ() {
-    var list = $('#faq-list');
-    if (!list) return;
-    var sorted = FAQS.slice().sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
-    list.innerHTML = sorted.map(function (f) {
-      var q = (f.q && (f.q[LANG] || f.q.en)) || '';
-      var a = (f.a && (f.a[LANG] || f.a.en)) || '';
-      return '<div class="faq-item"><button type="button" class="faq-q">' + q + '<i class="fa-solid fa-chevron-down"></i></button><div class="faq-a"><div><p>' + a + '</p></div></div></div>';
-    }).join('');
-    $$('#faq-list .faq-q').forEach(function (b) { b.addEventListener('click', function () { b.parentElement.classList.toggle('open'); }); });
-  }
-  function renderSocials() {
-    var el = $('#social-links');
-    if (!el) return;
-    var icons = { discord: 'fa-brands fa-discord', telegram: 'fa-brands fa-telegram', youtube: 'fa-brands fa-youtube', tiktok: 'fa-brands fa-tiktok', github: 'fa-brands fa-github', x: 'fa-brands fa-x-twitter', instagram: 'fa-brands fa-instagram' };
-    var html = '';
-    Object.keys(CFG.social || {}).forEach(function (k) {
-      var url = CFG.social[k];
-      var ic = icons[k];
-      if (url && ic) html += '<a class="social-link" href="' + url + '" target="_blank" rel="noopener" aria-label="' + k + '"><i class="' + ic + '"></i></a>';
-    });
-    el.innerHTML = html;
-  }
-  function renderBanner() {
-    var el = $('#site-banner');
-    if (!el) return;
-    if (!BANNER || !BANNER.enabled || sessionStorage.getItem('banner_closed') === '1') { el.hidden = true; document.body.classList.remove('has-banner'); return; }
-    var text = (BANNER.text && (BANNER.text[LANG] || BANNER.text.en)) || '';
-    if (!text) { el.hidden = true; document.body.classList.remove('has-banner'); return; }
-    el.className = 'site-banner type-' + (BANNER.type || 'info');
-    el.innerHTML = '<span>' + text + '</span>' + (BANNER.link ? '<a href="' + BANNER.link + '" target="_blank" rel="noopener">→</a>' : '') + '<button type="button" class="banner-close" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>';
-    el.hidden = false;
-    document.body.classList.add('has-banner');
-    el.querySelector('.banner-close').addEventListener('click', function () {
-      el.hidden = true; document.body.classList.remove('has-banner'); sessionStorage.setItem('banner_closed', '1');
-    });
-  }
-  function openModal(id) {
-    var p = null;
-    for (var i = 0; i < PRODUCTS.length; i++) { if (PRODUCTS[i].id === id) { p = PRODUCTS[i]; break; } }
-    if (!p) return;
-    var img = $('#m-img');
-    if (img) { img.classList.remove('broken'); if (p.image) { img.src = p.image; img.style.display = ''; } else { img.style.display = 'none'; } img.alt = p.name; }
-    var ti = $('#m-title'); if (ti) ti.textContent = p.name;
-    var de = $('#m-desc'); if (de) de.textContent = (p.desc && (p.desc[LANG] || p.desc.en)) || '';
-    var tg = $('#m-tags');
-    if (tg) tg.innerHTML = '<span class="status-badge status-' + p.status + '" style="position:static">' + t('status_' + p.status) + '</span><span class="tag-platform">' + p.platform + '</span>';
-    var feats = (p.features && (p.features[LANG] || p.features.en)) || [];
-    var ft = $('#m-feat-title'); if (ft) { ft.textContent = t('modal_features'); ft.style.display = feats.length ? '' : 'none'; }
-    var fe = $('#m-features');
-    if (fe) fe.innerHTML = feats.map(function (f) { return '<div class="m-feature"><i class="fa-solid fa-check"></i>' + f + '</div>'; }).join('');
-    var act = $('#modal-actions');
-    if (act) {
-      act.innerHTML = (p.download ? '<a class="btn btn-primary" href="' + p.download + '" target="_blank" rel="noopener"><i class="fa-solid fa-download"></i> ' + t('btn_download_now') + '</a>' : '<button type="button" class="btn btn-primary" disabled><i class="fa-solid fa-clock"></i> ' + t('btn_download') + '</button>') + '<a href="#contact" class="btn btn-outline m-comm"><i class="fa-brands fa-discord"></i> ' + t('btn_community') + '</a>';
-      var comm = act.querySelector('.m-comm');
-      if (comm) comm.addEventListener('click', closeModal);
-    }
-    var m = $('#modal');
-    if (m) { m.classList.add('open'); document.body.classList.add('no-scroll'); }
-  }
-  function closeModal() {
-    var m = $('#modal');
-    if (m) { m.classList.remove('open'); document.body.classList.remove('no-scroll'); }
-  }
-  var mc = $('#modal-close'); if (mc) mc.addEventListener('click', closeModal);
-  var mo = $('#modal'); if (mo) mo.addEventListener('click', function (e) { if (e.target === mo) closeModal(); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
-  function toast(msg, type) {
-    type = type || 'info';
-    var icons = { success: 'fa-circle-check', error: 'fa-circle-exclamation', info: 'fa-circle-info' };
-    var el = document.createElement('div');
-    el.className = 'toast toast-' + type;
-    el.innerHTML = '<i class="fa-solid ' + (icons[type] || 'fa-circle-info') + '"></i><span>' + msg + '</span>';
-    var w = $('#toast-wrap');
-    if (w) w.appendChild(el);
-    requestAnimationFrame(function () { el.classList.add('show'); });
-    setTimeout(function () { el.classList.remove('show'); setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 350); }, 4200);
-  }
-  var cform = $('#contact-form');
-  if (cform) {
-    cform.addEventListener('submit', function (e) {
-      e.preventDefault();
-      if (!cform.checkValidity()) { cform.reportValidity(); return; }
-      var btn = $('#send-btn');
-      var data = new FormData(cform);
-      var payload = { name: String(data.get('name') || ''), email: String(data.get('email') || ''), subject: String(data.get('subject') || ''), message: String(data.get('message') || ''), lang: LANG, createdAt: Date.now() };
-      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ' + t('btn_sending'); }
-      var fsP = db ? db.collection('messages').add(payload).catch(function () {}) : Promise.resolve();
-      Promise.all([fsP, fetch(FORMSPREE, { method: 'POST', body: data, headers: { 'Accept': 'application/json' } })])
-        .then(function () { toast(t('form_success'), 'success'); cform.reset(); })
-        .catch(function () {
-          window.location.href = 'mailto:' + (CFG.fallbackEmail || 'info@risebunny.com') + '?subject=' + encodeURIComponent(payload.subject || 'RiseBunny') + '&body=' + encodeURIComponent(payload.message + '\n\n--\n' + payload.name + ' <' + payload.email + '>');
-          toast(t('form_mailto'), 'info');
-        })
-        .then(function () { if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> ' + t('btn_send'); } });
-    });
-  }
-  var burger = $('#burger');
-  var navLinks = $('#nav-links');
-  if (burger && navLinks) {
-    burger.addEventListener('click', function () {
-      var open = navLinks.classList.toggle('open');
-      burger.setAttribute('aria-expanded', open ? 'true' : 'false');
-      burger.innerHTML = open ? '<i class="fa-solid fa-xmark"></i>' : '<i class="fa-solid fa-bars"></i>';
-    });
-    $$('#nav-links a').forEach(function (a) {
-      a.addEventListener('click', function () {
-        navLinks.classList.remove('open');
-        burger.innerHTML = '<i class="fa-solid fa-bars"></i>';
-        burger.setAttribute('aria-expanded', 'false');
-      });
-    });
-  }
-  window.addEventListener('scroll', function () {
-    var nav = $('#navbar');
-    if (nav) nav.classList.toggle('scrolled', window.scrollY > 40);
-  }, { passive: true });
-  window.addEventListener('resize', function () {
-    if (window.innerWidth > 900 && navLinks) {
-      navLinks.classList.remove('open');
-      if (burger) burger.innerHTML = '<i class="fa-solid fa-bars"></i>';
-    }
-  });
-  var io = ('IntersectionObserver' in window) ? new IntersectionObserver(function (es) {
-    es.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('visible'); io.unobserve(en.target); } });
-  }, { threshold: 0.12 }) : null;
-  function observeReveals() {
-    if (!io) { $$('.reveal').forEach(function (el) { el.classList.add('visible'); }); return; }
-    $$('.reveal:not(.visible)').forEach(function (el) { io.observe(el); });
-  }
-  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    var wrap = $('#particles');
-    if (wrap) {
-      for (var i = 0; i < 22; i++) {
-        var s = document.createElement('span');
-        var size = 2 + Math.random() * 4;
-        s.style.cssText = 'left:' + (Math.random() * 100) + '%;width:' + size + 'px;height:' + size + 'px;opacity:' + (0.12 + Math.random() * 0.3) + ';animation-duration:' + (9 + Math.random() * 16) + 's;animation-delay:-' + (Math.random() * 20) + 's;background:' + (Math.random() > 0.5 ? 'var(--accent)' : 'var(--primary)');
-        wrap.appendChild(s);
-      }
-    }
-  }
-  $$('.lang-btn').forEach(function (b) {
-    b.addEventListener('click', function () {
-      var l = b.getAttribute('data-lang');
-      if (l && window.RB && window.RB.setLang) window.RB.setLang(l);
-    });
-  });
-  (function () {
-    var taps = 0, timer = null;
-    document.addEventListener('click', function (e) {
-      var node = e.target, hit = false;
-      for (var i = 0; i < 4 && node; i++) {
-        if (node.classList && node.classList.contains('rb-copyright')) { hit = true; break; }
-        node = node.parentElement;
-      }
-      if (!hit) return;
-      e.preventDefault();
-      taps++;
-      clearTimeout(timer);
-      timer = setTimeout(function () { taps = 0; }, 2500);
-      if (taps >= 5) {
-        taps = 0;
-        sessionStorage.setItem('rb_admin_token', btoa(Date.now() + '_' + Math.random().toString(36).slice(2)));
+        sessionStorage.setItem('rb_admin_token', '1');
         sessionStorage.setItem('rb_admin_time', String(Date.now()));
-        window.location.href = 'admin.html';
-      }
-    }, true);
-  })();
-  function setLogo(sel, emojiSel) {
-    var el = $(sel);
-    if (!el) return;
-    if (CFG.logo) {
-      el.onload = function () { el.style.display = 'inline-block'; var em = document.querySelector(emojiSel); if (em) em.style.display = 'none'; };
-      el.onerror = function () { el.style.display = 'none'; };
-      el.src = CFG.logo;
-    } else {
-      el.style.display = 'none';
+      } catch (e) {}
+      window.location.href = 'admin.html';
     }
-  }
-  function startApp() {
-    setLogo('#logo-img', '.logo-emoji');
-    setLogo('#hero-logo-img', '.hero-emoji');
-    setLogo('#footer-logo-img', '.f-emoji');
-    renderSocials();
-    window.RB.setLang(CFG.defaultLang || 'en');
-    observeReveals();
-  }
-  function loadAll() {
-    if (!db) { startApp(); return; }
-    Promise.all([
-      db.collection('config').doc('site').get().catch(function () { return null; }),
-      db.collection('products').get().catch(function () { return null; }),
-      db.collection('faq').get().catch(function () { return null; }),
-      db.collection('features').get().catch(function () { return null; }),
-      db.collection('translations').doc('site').get().catch(function () { return null; }),
-      db.collection('banner').doc('main').get().catch(function () { return null; })
-    ]).then(function (r) {
-      if (r[0] && r[0].exists) CFG = Object.assign(JSON.parse(JSON.stringify(DEFAULT_CONFIG)), r[0].data());
-      if (r[1] && r[1].size > 0) { PRODUCTS = []; r[1].forEach(function (d) { var p = d.data(); p.id = d.id; PRODUCTS.push(p); }); }
-      if (r[2] && r[2].size > 0) { FAQS = []; r[2].forEach(function (d) { var f = d.data(); f.id = d.id; FAQS.push(f); }); }
-      if (r[3] && r[3].size > 0) { FEATURES = []; r[3].forEach(function (d) { var f = d.data(); f.id = d.id; FEATURES.push(f); }); }
-      if (r[4] && r[4].exists) { var tr = r[4].data(); mergeTrans(I18N.en, tr.en); mergeTrans(I18N.tr, tr.tr); }
-      if (r[5] && r[5].exists) BANNER = r[5].data();
-      startApp();
-    }).catch(function () { startApp(); });
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadAll);
-  } else {
-    loadAll();
-  }
+  });
+})();
+
+/* slim mod replay (visual only) */
+function replayMod() {
+  var toxic = document.querySelector('#mod-demo .feed-line.toxic');
+  var badge = $('#ban-badge');
+  var sys = document.querySelector('#mod-demo .feed-line.sys');
+  if (!toxic || !badge) return;
+  var txt = toxic.querySelector('.txt');
+  toxic.classList.remove('struck'); badge.classList.remove('show');
+  if (sys) sys.style.opacity = '0.5';
+  if (txt) txt.textContent = t('demo_msg2');
+  void toxic.offsetWidth;
+  setTimeout(function () {
+    toxic.classList.add('struck');
+    if (txt) txt.textContent = (LANG === 'tr' ? 'küfür silindi ✗' : 'profanity removed ✗');
+    if (sys) sys.style.opacity = '1';
+  }, 750);
+  setTimeout(function () { badge.classList.add('show'); }, 1700);
+}
+var replayBtn = $('#btn-replay-mod');
+if (replayBtn) replayBtn.addEventListener('click', replayMod);
+setTimeout(replayMod, 1400);
+
+/* nav */
+var burger = $('#burger'), navLinks = $('#nav-links');
+if (burger && navLinks) burger.addEventListener('click', function () {
+  var open = navLinks.classList.toggle('open');
+  burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+});
+window.addEventListener('scroll', function () {
+  var nav = $('#navbar');
+  if (nav) nav.classList.toggle('scrolled', window.scrollY > 40);
+  var ids = ['gate', 'arena', 'botcore', 'sistemler', 'sss', 'iletisim'];
+  var cur = ids[0];
+  ids.forEach(function (id) { var el = document.getElementById(id); if (el && window.scrollY + window.innerHeight * 0.4 >= el.offsetTop) cur = id; });
+  $$('#nav-links a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('href') === '#' + cur); });
+}, { passive: true });
+
+/* contact */
+var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+function cooldown() {
+  try { return Date.now() - parseInt(localStorage.getItem('rb_con_last') || '0', 10) < 60000; }
+  catch (e) { return false; }
+}
+var form = $('#con-form');
+if (form) form.addEventListener('submit', function (e) {
+  e.preventDefault();
+  var hp = $('#n-hp'); if (hp && hp.value) return;
+  var name = String($('#n-name').value || '').trim().slice(0, 60);
+  var email = String($('#n-mail').value || '').trim().slice(0, 120);
+  var subject = String($('#n-subj').value || '').trim().slice(0, 120);
+  var message = String($('#n-msg').value || '').trim().slice(0, 2000);
+  if (!name || !EMAIL_RE.test(email) || !subject || message.length < 3) { toast(t('form_invalid'), 'error'); return; }
+  if (cooldown()) { toast(t('form_rate'), 'error'); return; }
+  var btn = $('#send-btn'); btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> …';
+  var payload = { name: name, email: email, subject: subject, message: message, lang: LANG, createdAt: Date.now() };
+  var writes = [];
+  if (db) writes.push(db.collection('messages').add(payload).catch(function () {}));
+  var fd = new FormData(); fd.append('name', name); fd.append('email', email); fd.append('_subject', subject); fd.append('message', message);
+  writes.push(fetch('https://formspree.io/f/mleyngol', { method: 'POST', body: fd, headers: { 'Accept': 'application/json' } }).catch(function () {}));
+  Promise.all(writes).then(function () {
+    try { localStorage.setItem('rb_con_last', String(Date.now())); } catch (e2) {}
+    toast(t('form_success'), 'success'); form.reset();
+  }).catch(function () {
+    window.location.href = 'mailto:' + encodeURIComponent(CFG.fallbackEmail || 'info@risebunny.com') + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(message);
+  }).then(function () {
+    btn.disabled = false;
+    btn.innerHTML = esc(t('btn_send')) + ' <i class="fa-solid fa-arrow-right"></i>';
+  });
+});
+
+function startApp() {
+  renderSocials();
+  setLang(LANG);
+  replayMod();
+}
+function loadAll() {
+  if (!db) { startApp(); return; }
+  Promise.all([
+    db.collection('config').doc('site').get().catch(function () { return null; }),
+    db.collection('products').get().catch(function () { return null; }),
+    db.collection('faq').get().catch(function () { return null; }),
+    db.collection('features').get().catch(function () { return null; }),
+    db.collection('translations').doc('site').get().catch(function () { return null; }),
+    db.collection('banner').doc('main').get().catch(function () { return null; })
+  ]).then(function (r) {
+    if (r[0] && r[0].exists) { var c = r[0].data(); CFG = { defaultLang: /^(en|tr)$/.test(c.defaultLang) ? c.defaultLang : 'en', fallbackEmail: EMAIL_RE.test(c.fallbackEmail || '') ? c.fallbackEmail : 'info@risebunny.com', social: (c.social && typeof c.social === 'object') ? c.social : {} }; }
+    if (r[1] && r[1].size > 0) { PRODUCTS = []; r[1].forEach(function (d) { var p = d.data(); p.id = d.id; if (p && p.name) PRODUCTS.push(p); }); }
+    if (r[2] && r[2].size > 0) { FAQS = []; r[2].forEach(function (d) { var f = d.data(); f.id = d.id; FAQS.push(f); }); }
+    if (r[3] && r[3].size > 0) { FEATURES = []; r[3].forEach(function (d) { var f2 = d.data(); f2.id = d.id; FEATURES.push(f2); }); }
+    if (r[4] && r[4].exists) { var tr = r[4].data(); ['en', 'tr'].forEach(function (L) { if (tr[L] && typeof tr[L] === 'object') Object.keys(tr[L]).forEach(function (k) { var v = clean(tr[L][k]); if (v && v.length < 500) OVR[L][k] = v.slice(0, 500); }); }); }
+    if (r[5] && r[5].exists) BANNER = r[5].data();
+    if (!localStorage.getItem('rb-lang')) LANG = CFG.defaultLang || 'en';
+    startApp();
+  }).catch(function () { startApp(); });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadAll);
+else loadAll();
 })();

@@ -1,4 +1,4 @@
-/*! RiseBunny Forum v16 */
+/*! RiseBunny Forum v17 — security hardened (creds kaldırıldı, XSS esc, lang sync) */
 
 const L = {
   tr:{ login:"Giriş / Kayıt", logout:"Çıkış", ident:"Kullanıcı adı", pass:"Şifre", enter:"Giriş Yap",
@@ -26,7 +26,14 @@ const L = {
 };
 let lang = localStorage.getItem("rb-lang") || "tr";
 const t = k => (L[lang] && L[lang][k]) || L.tr[k] || k;
-window.rbSetLang = l => { lang = l; localStorage.setItem("rb-lang", l); route(); };
+window.rbSetLang = l => {
+  lang = (l === "en") ? "en" : "tr";
+  try { localStorage.setItem("rb-lang", lang); } catch (e) {}
+  const bTr = document.getElementById("flang-tr"), bEn = document.getElementById("flang-en");
+  if (bTr) bTr.classList.toggle("active", lang === "tr");
+  if (bEn) bEn.classList.toggle("active", lang === "en");
+  route();
+};
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
 const badge = r => { const b = RBAuth.BADGE[r] || RBAuth.BADGE.member;
@@ -134,6 +141,13 @@ function bellCount() {
 }
 
 /* ── v16: profil onarımı + buton garantisi + son giriş tazeleme ── */
+/* rules: username ^[a-z0-9_]+$ (3-20) — e-posta ön-ekini temizlemeden yazmak DENY yer. */
+function cleanUname(raw) {
+  let u = String(raw || "uye").toLowerCase().replace(/[^a-z0-9_]/g, "_").replace(/_+/g, "_").replace(/^_+|_+$/g, "").slice(0, 20);
+  if (u.length < 3) u = (u + "uye").slice(0, 20);
+  if (u.length < 3) u = "uye" + Math.floor(Math.random() * 900 + 100);
+  return u;
+}
 function heal() {
   if (typeof db === 'undefined' || typeof auth === 'undefined') return setTimeout(heal, 300);
   auth.onAuthStateChanged(async u => {
@@ -142,12 +156,12 @@ function heal() {
       const ref = db.collection("users").doc(u.uid);
       const s = await ref.get();
       if (!s.exists) {
-        const uname = (u.email || ("uye" + u.uid.slice(0,6))).split("@")[0];
-        await ref.set({ username: uname, role: (u.uid === window.ADMIN_UID) ? "kurucu" : "member",
+        const uname = cleanUname((u.email || ("uye" + u.uid.slice(0,6))).split("@")[0]);
+        await ref.set({ username: uname, role: "member",
           avatar:"", banned:false, stats:{threads:0,posts:0,likes:0},
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           lastLogin: firebase.firestore.FieldValue.serverTimestamp() }).catch(async () => {
-            await ref.set({ username: uname + Math.floor(Math.random()*90+10), role:"member", avatar:"", banned:false,
+            await ref.set({ username: cleanUname(uname + Math.floor(Math.random()*90+10)), role:"member", avatar:"", banned:false,
               stats:{threads:0,posts:0,likes:0},
               createdAt: firebase.firestore.FieldValue.serverTimestamp(),
               lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
@@ -314,7 +328,7 @@ async function renderThread(id) {
     posts += `<div class="rb-post"><div class="rb-posthead">${badge(p.authorRole||"member")}
       <b>${esc(p.authorName)}</b><span class="rb-time">${fmt(p.createdAt)}${p.edited?" ✏️":""}</span></div>
       <div class="rb-postbody">${esc(p.content).replace(/\n/g,"<br>")}</div>
-      ${p.image ? `<img class="rb-postimg" src="${p.image}" alt="">` : ""}
+      ${p.image ? `<img class="rb-postimg" src="${esc(p.image)}" alt="" loading="lazy">` : ""}
       ${myW()>=3 ? `<button class="rb-ghost" onclick="RB.delPost('${p.id}')">${t("del")}</button>` : ""}</div>`;
   });
   const cp = canPost(c);
@@ -328,7 +342,7 @@ async function renderThread(id) {
         <button class="rb-ghost" onclick="RB.pin('${id}',${!th.pinned})">${th.pinned?t("unpin"):t("pin")}</button>
         <button class="rb-ghost rb-danger" onclick="RB.delThread('${id}')">${t("del")}</button></div>` : ""}</div>
     <div class="rb-post rb-op"><div class="rb-postbody">${esc(th.content).replace(/\n/g,"<br>")}</div>
-      ${th.image ? `<img class="rb-postimg" src="${th.image}" alt="">` : ""}</div>
+      ${th.image ? `<img class="rb-postimg" src="${esc(th.image)}" alt="" loading="lazy">` : ""}</div>
     ${posts}
     ${CUR() && cp && ((CUR() && !th.locked) || myW() >= 3) ? `<div class="rb-replybox"><textarea id="replyBox" placeholder="${t("reply")}"></textarea>
       ${myW()>=3 ? `<div class="rb-attach"><label class="rb-ghost">${t("attach")}<input type="file" id="replyFile" accept="image/*" hidden></label><img id="replyPrev" class="rb-prev" hidden><button class="rb-ghost rb-danger" id="replyImgX" hidden onclick="RB.clearImg('replyPrev','replyImgX')">✕</button></div>` : ""}
@@ -462,18 +476,13 @@ RB.clearImg = (prevId, xId) => { window.__rbImg = "";
   const p = document.getElementById(prevId); if (p) p.hidden = true;
   const x = document.getElementById(xId); if (x) x.hidden = true; };
 
-/* ── v16: HESABI SİL (gömülü) ── */
+/* ── v17 GÜVENLİK: HESABI SİL — plaintext şifre kasası (creds) tamamen kaldırıldı.
+       Auth hesabı Firebase Admin SDK (sunucu) tarafında silinmeli; burada
+       yalnızca Firestore verileri temizlenir. ── */
 RB.delAccount = (uid, username) => {
   if (CUR() && CUR().uid === uid) return alert("⚠️ Kendi hesabını silemezsin.");
-  if (!confirm('"' + username + '" hesabı ve TÜM verileri silinecek. Emin misin?')) return;
+  if (!confirm('"' + username + '" hesabının TÜM forum verileri silinecek. Emin misin?')) return;
   if (!confirm('SON UYARI: Bu işlem GERİ ALINAMAZ. Devam edilsin mi?')) return;
-  let secAuth = null;
-  try {
-    let secApp = null;
-    for (let i=0;i<firebase.apps.length;i++) if (firebase.apps[i].name === 'rb-sec') secApp = firebase.apps[i];
-    if (!secApp) secApp = firebase.initializeApp(window.firebaseConfig, 'rb-sec');
-    secAuth = secApp.auth();
-  } catch (e) {}
   const clean = async () => {
     const [th, po] = await Promise.all([
       db.collection('threads').where('authorId','==',uid).get(),
@@ -483,14 +492,9 @@ RB.delAccount = (uid, username) => {
     th.forEach(d => b.delete(d.ref));
     po.forEach(d => b.delete(d.ref));
     b.delete(db.collection('users').doc(uid));
-    b.delete(db.collection('creds').doc(uid));
     await b.commit();
   };
-  db.collection('creds').doc(uid).get().then(cs => {
-    const pw = cs.exists ? (cs.data().password || null) : null;
-    if (pw && secAuth) return secAuth.signInWithEmailAndPassword(username + "@risebunny.app", pw)
-      .then(r => r.user.delete()).catch(()=>{});
-  }).then(clean).then(() => { alert('✅ Hesap tamamen silindi.'); admSection('users'); })
+  clean().then(() => { alert('✅ Forum verileri silindi. (Auth hesabı için: Firebase Console → Authentication → kullanıcıyı sil)'); admSection('users'); })
     .catch(e => alert('⚠️ Hata: ' + ((e && e.message) || e)));
 };
 
@@ -508,12 +512,7 @@ RB.filterUsers = q => {
     </span></div>`).join("") || '<div class="rb-empty">—</div>';
 };
 
-/* ── v16: detay — doğru tarihler + BAN yanında 🗑 ── */
-RB.togglePw = () => {
-  const el = document.getElementById("rb-pw-val"); if (!el) return;
-  if (el.dataset.show === "1") { el.textContent = "••••••••"; el.dataset.show = "0"; }
-  else { el.textContent = window.__rbPw || "—"; el.dataset.show = "1"; }
-};
+/* ── v17 GÜVENLİK: şifre görüntüleme kaldırıldı (creds koleksiyonu silindi) ── */
 RB.userDetail = async uid => {
   const body = document.getElementById("adm-body"); if (!body) return;
   body.innerHTML = '<div class="rb-empty">🐰...</div>';
@@ -527,9 +526,6 @@ RB.userDetail = async uid => {
     const po = await db.collection("posts").where("authorId","==",uid).get();
     const posts = []; po.forEach(d => posts.push(d.data()));
     posts.sort((a,b) => secs(b.createdAt) - secs(a.createdAt));
-    let pw = null;
-    try { const cd = await db.collection("creds").doc(uid).get(); if (cd.exists) pw = cd.data().password || null; } catch (e) {}
-    window.__rbPw = pw;
     body.innerHTML = `<div class="rb-udetail">
       <button class="rb-back" onclick="RB.admUsersBack()">← ${t("users")}</button>
       <div class="rb-profile" style="text-align:left">
@@ -543,8 +539,6 @@ RB.userDetail = async uid => {
           <div class="rb-stat"><b>${(u.stats&&u.stats.posts)||0}</b><span>${t("replies")}</span></div>
         </div>
         <p style="color:var(--dim);font-size:12px">📅 Kayıt (SABİT): ${fmt(u.createdAt)}<br>🕐 Son giriş: ${fmt(u.lastLogin)} · ${rel(u.lastLogin)}</p>
-        <p style="font-size:13px">🔑 Şifre: <b id="rb-pw-val" data-show="0">${pw ? "••••••••" : "— (henüz kayıtlı değil)"}</b>
-          ${pw ? ` <button class="rb-ghost" onclick="RB.togglePw()">👁 Göster/Gizle</button>` : ""}</p>
         <div class="rb-modbar">
           <select onchange="RB.setRole('${uid}',this.value)">${Object.keys(RBAuth.WEIGHT).map(r=>`<option ${r===u.role?"selected":""}>${r}</option>`).join("")}</select>
           <button class="rb-ghost rb-danger" onclick="RB.ban('${uid}',${!u.banned})">${u.banned?t("unban"):t("ban")}</button>

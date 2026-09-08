@@ -1,4 +1,4 @@
-/*! RiseBunny Admin Extra — Bakım Sekmesi + Görsel Silme + Admin Bypass İşareti */
+/*! RiseBunny Admin Extra — Bakım Sekmesi + Görsel Silme (v6 güvenlik temizliği) */
 (function () {
 'use strict';
 function ready(cb) { if (document.readyState !== 'loading') return cb(); document.addEventListener('DOMContentLoaded', cb); }
@@ -13,39 +13,40 @@ function toast(msg, type) {
 
 ready(function () {
 
-  /* 🔑 Admin bypass işaretçisi — bakım modu admin'i yutmasın (tüm sekmeler) */
-  function markLive() {
-    try {
-      var tok = sessionStorage.getItem('rb_admin_token');
-      var tim = parseInt(sessionStorage.getItem('rb_admin_time') || '0', 10);
-      if (tok && (Date.now() - tim < 15 * 60 * 1000)) localStorage.setItem('rb_admin_live', String(Date.now()));
-    } catch (e) {}
-  }
-  markLive(); setInterval(markLive, 60000);
+  /* v6 GÜVENLİK: markLive (localStorage rb_admin_live) kaldırıldı —
+     bakım modu artık yalnızca gerçek Firebase Auth oturumuyla atlatılabilir. */
 
   /* ═══════ BAKIM SEKMESİ ═══════ */
-  var tabBtn = document.createElement('button');
-  tabBtn.type = 'button'; tabBtn.className = 'tab'; tabBtn.setAttribute('data-tab', 'maintenance');
-  tabBtn.innerHTML = '<i class="fa-solid fa-screwdriver-wrench"></i> Bakım';
-  var tabs = document.querySelectorAll('.tab');
-  if (tabs.length) tabs[tabs.length - 1].parentNode.appendChild(tabBtn);
+  var tabBtn = document.querySelector('.tab[data-tab="maintenance"]');
+  var panel = document.querySelector('.tab-panel[data-panel="maintenance"]');
+  if (!tabBtn) {
+    tabBtn = document.createElement('button');
+    tabBtn.type = 'button'; tabBtn.className = 'tab'; tabBtn.setAttribute('data-tab', 'maintenance');
+    tabBtn.innerHTML = '<i class="fa-solid fa-screwdriver-wrench"></i> Bakım';
+    var tabs = document.querySelectorAll('.tab');
+    if (tabs.length) tabs[tabs.length - 1].parentNode.appendChild(tabBtn);
+  }
+  if (!panel) {
+    panel = document.createElement('section');
+    panel.className = 'tab-panel'; panel.setAttribute('data-panel', 'maintenance');
+    panel.innerHTML =
+      '<h2>🔧 Bakım Modu</h2>' +
+      '<p style="color:var(--muted);font-size:13px">Aktifken TÜM sayfalar (index, forum, 404...) ziyaretçilere kapanır. Admin panele giriş yapmış cihaz siteyi normal görür.</p>' +
+      '<label style="display:flex;gap:10px;align-items:center;margin:14px 0;cursor:pointer"><input type="checkbox" id="mnt-enabled"> <b>Bakım modu AKTİF</b></label>' +
+      '<div class="row-controls"><textarea id="mnt-tr" rows="2" placeholder="Bakım mesajı (TR)"></textarea><textarea id="mnt-en" rows="2" placeholder="Maintenance message (EN)"></textarea></div>' +
+      '<div class="row-actions" style="margin-top:10px"><button type="button" class="btn btn-primary btn-sm" id="btn-save-mnt"><i class="fa-solid fa-floppy-disk"></i> Kaydet</button></div>';
+    var panels = document.querySelectorAll('.tab-panel');
+    if (panels.length) panels[panels.length - 1].parentNode.appendChild(panel);
+  }
 
-  var panel = document.createElement('section');
-  panel.className = 'tab-panel'; panel.setAttribute('data-panel', 'maintenance');
-  panel.innerHTML =
-    '<h2>🔧 Bakım Modu</h2>' +
-    '<p style="color:#9ca3af;font-size:13px">Aktifken TÜM sayfalar (index, forum, 404...) ziyaretçilere kapanır. Admin panele giriş yapmış cihaz siteyi normal görür.</p>' +
-    '<label style="display:flex;gap:10px;align-items:center;margin:14px 0"><input type="checkbox" id="mnt-enabled"> <b>Bakım modu AKTİF</b></label>' +
-    '<div class="row-controls"><textarea id="mnt-tr" rows="2" placeholder="Bakım mesajı (TR)"></textarea><textarea id="mnt-en" rows="2" placeholder="Maintenance message (EN)"></textarea></div>' +
-    '<div class="row-actions" style="margin-top:10px"><button type="button" class="btn btn-primary btn-sm" id="btn-save-mnt"><i class="fa-solid fa-floppy-disk"></i> Kaydet</button></div>';
-  var panels = document.querySelectorAll('.tab-panel');
-  if (panels.length) panels[panels.length - 1].parentNode.appendChild(panel);
-
-  tabBtn.addEventListener('click', function () {
-    document.querySelectorAll('.tab').forEach(function (x) { x.classList.remove('active'); });
-    document.querySelectorAll('.tab-panel').forEach(function (x) { x.classList.remove('active'); });
-    tabBtn.classList.add('active'); panel.classList.add('active');
-  });
+  if (!tabBtn.__bound) {
+    tabBtn.__bound = true;
+    tabBtn.addEventListener('click', function () {
+      document.querySelectorAll('.tab').forEach(function (x) { x.classList.remove('active'); });
+      document.querySelectorAll('.tab-panel').forEach(function (x) { x.classList.remove('active'); });
+      tabBtn.classList.add('active'); panel.classList.add('active');
+    });
+  }
 
   fbReady(function (db) {
     db.collection('config').doc('maintenance').get().then(function (s) {
@@ -62,7 +63,7 @@ ready(function () {
         message: { tr: document.getElementById('mnt-tr').value, en: document.getElementById('mnt-en').value },
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       }).then(function () {
-        markLive(); toast('Bakım modu kaydedildi ✅', 'success');
+        toast('Bakım modu kaydedildi ✅', 'success');
         db.collection('activity').add({ action: 'update_maintenance', detail: 'Bakım modu güncellendi', createdAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(function () {});
       }).catch(function (e) { toast('Hata: ' + e.message, 'error'); });
     });

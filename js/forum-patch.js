@@ -1,4 +1,4 @@
-/*! RiseBunny Forum Patch v15 */
+/*! RiseBunny Forum Patch v17 — security hardened (creds kaldırıldı) */
 (function () {
 'use strict';
 console.log('[RB] forum-patch v15 ✓');
@@ -39,7 +39,13 @@ function ensureBtn() {
 }
 ensureBtn();
 
-/* ── Profil onarımı ── */
+/* ── Profil onarımı (rules-uyumlu kullanıcı adı) ── */
+function cleanUname(raw) {
+  var u = String(raw || "uye").toLowerCase().replace(/[^a-z0-9_]/g, "_").replace(/_+/g, "_").replace(/^_+|_+$/g, "").slice(0, 20);
+  if (u.length < 3) u = (u + "uye").slice(0, 20);
+  if (u.length < 3) u = "uye" + Math.floor(Math.random() * 900 + 100);
+  return u;
+}
 function heal() {
   if (typeof db === 'undefined' || typeof auth === 'undefined') return setTimeout(heal, 300);
   auth.onAuthStateChanged(async function (u) {
@@ -48,12 +54,12 @@ function heal() {
       var ref = db.collection("users").doc(u.uid);
       var s = await ref.get();
       if (!s.exists) {
-        var uname = (u.email || ("uye" + u.uid.slice(0, 6))).split("@")[0];
-        await ref.set({ username: uname, role: (u.uid === window.ADMIN_UID) ? "kurucu" : "member",
+        var uname = (window.cleanUname || cleanUname)((u.email || ("uye" + u.uid.slice(0, 6))).split("@")[0]);
+        await ref.set({ username: uname, role: "member",
           avatar: "", banned: false, stats: { threads: 0, posts: 0, likes: 0 },
           createdAt: firebase.firestore.FieldValue.serverTimestamp(), lastLogin: firebase.firestore.FieldValue.serverTimestamp() })
           .catch(async function () {
-            await ref.set({ username: uname + Math.floor(Math.random()*90+10), role: "member", avatar: "", banned: false,
+            await ref.set({ username: (window.cleanUname || cleanUname)(uname + Math.floor(Math.random()*90+10)), role: "member", avatar: "", banned: false,
               stats: { threads: 0, posts: 0, likes: 0 },
               createdAt: firebase.firestore.FieldValue.serverTimestamp(), lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
           });
@@ -80,26 +86,14 @@ function patchRB() {
   window.RB.newThread = async function (slug) { try { await origNew(slug); } catch (e) { alert("⚠️ Konu açılamadı:\n" + ((e && e.message) || e)); } };
   window.RB.reply = async function (a, b, c) { try { await origReply(a, b, c); } catch (e) { alert("⚠️ Yanıt gönderilemedi:\n" + ((e && e.message) || e)); } };
 
-  /* ── Şifre göster/gizle ── */
-  window.RB.togglePw = () => {
-    const el = document.getElementById("rb-pw-val"); if (!el) return;
-    if (el.dataset.show === "1") { el.textContent = "••••••••"; el.dataset.show = "0"; }
-    else { el.textContent = window.__rbPw || "—"; el.dataset.show = "1"; }
-  };
+  /* ── v17 GÜVENLİK: togglePw kaldırıldı (şifre kasası yok) ── */
 
-  /* ── v15: HESABI SİL (Auth + users + creds + konular + yorumlar) ── */
+  /* ── v17 GÜVENLİK: HESABI SİL (Firestore verileri — creds/password yolu kaldırıldı) ── */
   window.RB.delAccount = function (uid, username) {
     if (window.RBAuth.CURRENT() && window.RBAuth.CURRENT().uid === uid)
       return alert("⚠️ Kendi hesabını buradan silemezsin.");
-    if (!confirm('"' + username + '" hesabı ve TÜM verileri silinecek. Emin misin?')) return;
+    if (!confirm('"' + username + '" hesabının TÜM forum verileri silinecek. Emin misin?')) return;
     if (!confirm('SON UYARI: Bu işlem GERİ ALINAMAZ. Devam edilsin mi?')) return;
-    var secAuth = null;
-    try {
-      var secApp = null;
-      for (var i = 0; i < firebase.apps.length; i++) if (firebase.apps[i].name === 'rb-sec') secApp = firebase.apps[i];
-      if (!secApp) secApp = firebase.initializeApp(window.firebaseConfig, 'rb-sec');
-      secAuth = secApp.auth();
-    } catch (e) {}
     var clean = function () {
       return Promise.all([
         db.collection('threads').where('authorId', '==', uid).get(),
@@ -109,17 +103,11 @@ function patchRB() {
         snaps[0].forEach(function (d) { b.delete(d.ref); });
         snaps[1].forEach(function (d) { b.delete(d.ref); });
         b.delete(db.collection('users').doc(uid));
-        b.delete(db.collection('creds').doc(uid));
         return b.commit();
       });
     };
-    db.collection('creds').doc(uid).get().then(function (cs) {
-      var pw = cs.exists ? (cs.data().password || null) : null;
-      if (pw && secAuth)
-        return secAuth.signInWithEmailAndPassword(username + '@risebunny.app', pw)
-          .then(function (r) { return r.user.delete(); }).catch(function () {});
-    }).then(clean).then(function () {
-      alert('✅ Hesap tamamen silindi.');
+    clean().then(function () {
+      alert('✅ Forum verileri silindi. (Auth kaydı için: Firebase Console → Authentication)');
       if (typeof admSection === 'function') admSection('users'); else route();
     }).catch(function (e) { alert('⚠️ Hata: ' + ((e && e.message) || e)); });
   };
@@ -152,9 +140,6 @@ function patchRB() {
       const po = await db.collection("posts").where("authorId","==",uid).get();
       const posts = []; po.forEach(d => posts.push(d.data()));
       posts.sort((a,b) => psecs(b.createdAt) - psecs(a.createdAt));
-      let pw = null;
-      try { const cd = await db.collection("creds").doc(uid).get(); if (cd.exists) pw = cd.data().password || null; } catch (e) {}
-      window.__rbPw = pw;
       body.innerHTML = `<div class="rb-udetail">
         <button class="rb-back" onclick="RB.admUsersBack()">← Kullanıcılar</button>
         <div class="rb-profile" style="text-align:left">
@@ -168,8 +153,6 @@ function patchRB() {
             <div class="rb-stat"><b>${(u.stats&&u.stats.posts)||0}</b><span>Yanıt</span></div>
           </div>
           <p style="color:var(--dim);font-size:12px">📅 Kayıt: ${pfmt(u.createdAt)}<br>🕐 Son giriş: ${pfmt(u.lastLogin)} · ${prel(u.lastLogin)}</p>
-          <p style="font-size:13px">🔑 Şifre: <b id="rb-pw-val" data-show="0">${pw ? "••••••••" : "— (henüz kayıtlı değil)"}</b>
-            ${pw ? ` <button class="rb-ghost" onclick="RB.togglePw()">👁 Göster/Gizle</button>` : ""}</p>
           <div class="rb-modbar">
             <select onchange="RB.setRole('${uid}',this.value)">${Object.keys(RBAuth.WEIGHT).map(r=>`<option ${r===u.role?"selected":""}>${r}</option>`).join("")}</select>
             <button class="rb-ghost rb-danger" onclick="RB.ban('${uid}',${!u.banned})">${u.banned?"BAN Kaldır":"BAN"}</button>
