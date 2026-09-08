@@ -115,8 +115,8 @@ VPS. Geçici güvence: `r!yedek` (DB dosyasını DM'e gönderir) +
 - risebunny → forum: çerez → Firebase otomatik giriş. Forum → risebunny:
   Firebase token `/api/session/restore` ile çereze çevrilir, tekrar giriş gerekmez.
 - Premiumu aktif kullanıcı premiumu tekrar alamaz (403 + buton kilitli).
-- 🎁 Rastgele Paket 150K: %15 Prem7 + %7 Prem30 (tek) / petler %40 tekli, %40 çiftli,
-  %20 üçlü. Sonuç ekranda + DM'de (embed), DB'ye işlenir.
+- 🎁 Rastgele Paket 150K: **sadece pet** — %40 tekli, %40 çiftli, %20 üçlü.
+  Sonuç ekranda + DM'de (embed), DB'ye işlenir.
 - Canlı veri zinciri: `/api/stats` (top.gg → bot) + `/api/leaderboard` (bot → Firestore).
   İkisi de `BOT_API_URL` ister; yoksa simülasyon + ekranda sebebi yazar.
 
