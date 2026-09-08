@@ -433,81 +433,175 @@
       r.innerHTML = items.length === 0 ? '<div class="log-empty">Aktivite yok.</div>' : items.map(function (x) { var d = (x.createdAt && x.createdAt.toDate) ? x.createdAt.toDate() : new Date(); return '<div class="log-item"><i class="fa-solid ' + (icons[x.action] || 'fa-circle') + '"></i><span>' + esc(x.detail || x.action) + '</span><span class="log-date">' + d.toLocaleString('tr-TR') + '</span></div>'; }).join('');
     }).catch(function () { var r = $('#recent-logs'); if (r) r.innerHTML = '<div class="log-empty">Aktivite yüklenemedi.</div>'; });
   }
-  /* ══════════ FORUM KULLANICI YÖNETİMİ — v17: creds/şifre yolu kaldırıldı ══════════ */
-(function initForumTab() {
-  if (!db || !auth) return;
-  var FU = [];
+/* ══════════ FORUM KULLANICI YÖNETİMİ (Revize Edilmiş & Garantili Yapı) ══════════ */
+  (function initForumTab() {
+    if (!db || !auth) return;
+    var FU = [];
 
-  function mount() {
-    var tabs = $$('.tab');
-    if (!tabs.length) return setTimeout(mount, 300);
-    if (document.querySelector('[data-tab="forum"]')) return;
-    var btn = document.createElement('button');
-    btn.type = 'button'; btn.className = 'tab'; btn.setAttribute('data-tab', 'forum');
-    btn.innerHTML = '<i class="fa-solid fa-users-gear"></i> Forum';
-    tabs[tabs.length - 1].parentNode.appendChild(btn);
-    var sec = document.createElement('section');
-    sec.className = 'tab-panel'; sec.setAttribute('data-panel', 'forum');
-    sec.innerHTML = '<h2>🐰 Forum Kullanıcıları</h2>' +
-      '<p style="color:#9ca3af;font-size:13px">Yetki verme, BAN ve <b style="color:#ff6b6d">HESAP SİLME</b>. Şifreler artık saklanmaz/değiştirilmez (güvenlik).</p>' +
-      '<input type="text" id="fu-search" placeholder="🔍 Kullanıcı ara..." style="width:100%;margin:10px 0;padding:10px 12px;border-radius:10px;border:1px solid #2a3348;background:#0e1219;color:#fff;outline:none">' +
-      '<div id="forum-users"><div class="msg-empty">Yükleniyor...</div></div>';
-    $$('.tab-panel').slice(-1)[0].parentNode.appendChild(sec);
-    btn.addEventListener('click', function () {
-      $$('.tab').forEach(function (x) { x.classList.remove('active'); });
-      $$('.tab-panel').forEach(function (x) { x.classList.remove('active'); });
-      btn.classList.add('active'); sec.classList.add('active');
-      loadForumUsers();
-    });
-    sec.querySelector('#fu-search').addEventListener('input', function (e) { renderForumUsers(e.target.value); });
-  }
+    function mount() {
+      // 1. Zaten eklenmiş mi kontrol et
+      var existingTab = document.querySelector('[data-tab="forum"]');
+      var existingPanel = document.querySelector('[data-panel="forum"]');
 
-  function loadForumUsers() {
-    var box = $('#forum-users'); if (!box) return;
-    box.innerHTML = '<div class="msg-empty">Yükleniyor...</div>';
-    db.collection('users').get().then(function (r) {
-      FU = []; r.forEach(function (d) { var u = d.data(); u.uid = d.id; FU.push(u); });
-      renderForumUsers('');
-    }).catch(function (e) { box.innerHTML = '<div class="msg-empty">Hata: ' + esc(e.message) + '</div>'; });
-  }
+      // 2. Sekme veya Panel yoksa DOM'a dinamik olarak güvenli şekilde ekle
+      if (!existingTab) {
+        var tabsWrap = $('.tabs') || $('.tab-list') || $$('.tab')[0]?.parentNode;
+        if (tabsWrap) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'tab';
+          btn.setAttribute('data-tab', 'forum');
+          btn.innerHTML = '<i class="fa-solid fa-users-gear"></i> Forum';
+          tabsWrap.appendChild(btn);
+          existingTab = btn;
+        }
+      }
 
-  function renderForumUsers(q) {
-    var box = $('#forum-users'); if (!box) return;
-    q = (q || '').toLowerCase();
-    var list = FU.filter(function (u) { return (u.username || '').toLowerCase().indexOf(q) > -1; });
-    box.innerHTML = list.length ? list.map(function (u) {
-      return '<div class="admin-row" data-fuid="' + u.uid + '" style="margin-bottom:12px">' +
-        '<div class="row-header"><div class="row-title"><b>👤 ' + esc(u.username) + '</b>' + (u.banned ? ' 🚫' : '') + ' <span style="opacity:.6;font-size:12px">(' + esc(u.role || 'member') + ')</span></div></div>' +
-        '<div class="row-controls" style="margin-top:8px">' +
-          '<select class="fu-role" style="padding:8px;border-radius:8px;background:#0e1219;color:#fff;border:1px solid #2a3348">' + ['member', 'vip', 'moderator', 'developer', 'kurucu'].map(function (r) { return '<option' + (r === u.role ? ' selected' : '') + '>' + r + '</option>'; }).join('') + '</select>' +
-          '<button type="button" class="btn btn-outline btn-sm fu-ban">' + (u.banned ? '✅ Ban Kaldır' : '🚫 BAN') + '</button>' +
-          '<button type="button" class="btn btn-outline btn-sm danger fu-del">🗑 Hesabı Sil</button>' +
-        '</div></div>';
-    }).join('') : '<div class="msg-empty">Kullanıcı yok.</div>';
+      if (!existingPanel) {
+        var panelsWrap = $('.tab-content') || $('.panels') || $$('.tab-panel')[0]?.parentNode;
+        if (panelsWrap) {
+          var sec = document.createElement('section');
+          sec.className = 'tab-panel';
+          sec.setAttribute('data-panel', 'forum');
+          sec.innerHTML = '<h2>🐰 Forum Kullanıcıları</h2>' +
+            '<p style="color:#9ca3af;font-size:13px;margin-bottom:12px">Yetki verme, BAN ve <b style="color:#ff6b6d">HESAP SİLME</b> işlemleri. Şifreler saklanmaz.</p>' +
+            '<div style="display:flex;gap:10px;margin-bottom:12px;">' +
+              '<input type="text" id="fu-search" placeholder="🔍 Kullanıcı ara (kullanıcı adı veya UID)..." style="flex:1;padding:10px 12px;border-radius:10px;border:1px solid #2a3348;background:#0e1219;color:#fff;outline:none">' +
+              '<button type="button" id="fu-refresh" class="btn btn-outline btn-sm"><i class="fa-solid fa-rotate"></i> Yenile</button>' +
+            '</div>' +
+            '<div id="forum-users"><div class="msg-empty">Yükleniyor...</div></div>';
+          panelsWrap.appendChild(sec);
+          existingPanel = sec;
+        }
+      }
 
-    $$('.admin-row[data-fuid]', box).forEach(function (row) {
-      var uid = row.getAttribute('data-fuid');
-      var u = null; FU.forEach(function (x) { if (x.uid === uid) u = x; });
-      row.querySelector('.fu-role').addEventListener('change', function (e) {
-        db.collection('users').doc(uid).update({ role: e.target.value }).then(function () {
-          toast('Yetki güncellendi', 'success'); logAction('forum_role', u.username + ' → ' + e.target.value); loadForumUsers();
+      // 3. Sekme Tıklama Olayını Dinle
+      if (existingTab) {
+        existingTab.addEventListener('click', function () {
+          $$('.tab').forEach(function (x) { x.classList.remove('active'); });
+          $$('.tab-panel').forEach(function (x) { x.classList.remove('active'); });
+          existingTab.classList.add('active');
+          if (existingPanel) existingPanel.classList.add('active');
+          loadForumUsers();
         });
-      });
-      row.querySelector('.fu-ban').addEventListener('click', function () {
-        db.collection('users').doc(uid).update({ banned: !u.banned }).then(function () {
-          toast(u.banned ? 'Ban kaldırıldı ✅' : 'BANlandı 🚫', 'success'); logAction('forum_ban', u.username); loadForumUsers();
-        });
-      });
-      row.querySelector('.fu-del').addEventListener('click', function () { forumDelete(uid, u.username); });
-    });
-  }
+      }
 
-  /* 🗑 HESABI SİL — Firestore verileri (Auth kaydı Firebase Console'dan silinir) */
-  function forumDelete(uid, username) {
-    if (!confirm('"' + username + '" hesabının TÜM forum verileri silinecek. Emin misin?')) return;
-    if (!confirm('SON UYARI: Geri alınamaz! Devam edilsin mi?')) return;
-    var cleanFirestore = function () {
-      return Promise.all([
+      // 4. Arama ve Yenileme Dinleyicileri
+      document.addEventListener('input', function (e) {
+        if (e.target && e.target.id === 'fu-search') {
+          renderForumUsers(e.target.value);
+        }
+      });
+
+      document.addEventListener('click', function (e) {
+        if (e.target && (e.target.id === 'fu-refresh' || e.target.closest('#fu-refresh'))) {
+          loadForumUsers();
+        }
+      });
+    }
+
+    // Firestore'dan Kullanıcıları Çek
+    function loadForumUsers() {
+      var box = $('#forum-users');
+      if (!box) return;
+      box.innerHTML = '<div class="msg-empty"><i class="fa-solid fa-spinner fa-spin"></i> Kullanıcılar yükleniyor...</div>';
+      
+      db.collection('users').get().then(function (r) {
+        FU = [];
+        r.forEach(function (d) {
+          var u = d.data() || {};
+          u.uid = d.id;
+          FU.push(u);
+        });
+        
+        var searchInput = $('#fu-search');
+        renderForumUsers(searchInput ? searchInput.value : '');
+      }).catch(function (e) {
+        console.error('Forum kullanıcıları çekilemedi:', e);
+        box.innerHTML = '<div class="msg-empty" style="color:#ef4444">Yükleme Hatası: ' + esc(e.message) + '</div>';
+      });
+    }
+
+    // Kullanıcı Listesini HTML Olarak Bastır
+    function renderForumUsers(q) {
+      var box = $('#forum-users');
+      if (!box) return;
+      q = (q || '').toLowerCase().trim();
+
+      var list = FU.filter(function (u) {
+        var uname = (u.username || u.email || '').toLowerCase();
+        var uid = (u.uid || '').toLowerCase();
+        return uname.indexOf(q) > -1 || uid.indexOf(q) > -1;
+      });
+
+      if (!list.length) {
+        box.innerHTML = '<div class="msg-empty">' + (FU.length ? 'Aramaya uygun kullanıcı bulunamadı.' : 'Henüz hiç kullanıcı kaydı yok.') + '</div>';
+        return;
+      }
+
+      box.innerHTML = list.map(function (u) {
+        var isDiscord = u.uid.length > 15 && !isNaN(u.uid);
+        return '<div class="admin-row" data-fuid="' + u.uid + '" style="margin-bottom:12px;padding:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px">' +
+          '<div class="row-header" style="display:flex;justify-content:space-between;align-items:center;">' +
+            '<div class="row-title">' +
+              '<b>👤 ' + esc(u.username || u.email || 'İsimsiz Kullanıcı') + '</b>' +
+              (u.banned ? ' <span style="color:#ef4444;font-weight:bold;">[BANLI]</span>' : '') +
+              '<br><small style="opacity:.6;font-size:11px">' + (isDiscord ? 'Discord ID: ' : 'UID: ') + esc(u.uid) + '</small>' +
+            '</div>' +
+            '<span class="badge" style="padding:4px 8px;background:rgba(255,255,255,0.1);border-radius:4px;font-size:12px;">' + esc(u.role || 'member') + '</span>' +
+          '</div>' +
+          '<div class="row-controls" style="margin-top:10px;display:flex;gap:8px;align-items:center;">' +
+            '<select class="fu-role" style="padding:6px 10px;border-radius:6px;background:#0e1219;color:#fff;border:1px solid #2a3348">' +
+              ['member', 'vip', 'moderator', 'developer', 'kurucu'].map(function (r) {
+                return '<option value="' + r + '"' + (r === (u.role || 'member') ? ' selected' : '') + '>' + r + '</option>';
+              }).join('') +
+            '</select>' +
+            '<button type="button" class="btn btn-outline btn-sm fu-ban">' + (u.banned ? '✅ Ban Kaldır' : '🚫 BAN') + '</button>' +
+            '<button type="button" class="btn btn-outline btn-sm danger fu-del"><i class="fa-solid fa-trash"></i> Sil</button>' +
+          '</div></div>';
+      }).join('');
+
+      // Event Bağlamaları
+      $$('.admin-row[data-fuid]', box).forEach(function (row) {
+        var uid = row.getAttribute('data-fuid');
+        var u = FU.find(function (x) { return x.uid === uid; }) || {};
+
+        var roleSelect = row.querySelector('.fu-role');
+        if (roleSelect) {
+          roleSelect.addEventListener('change', function (e) {
+            db.collection('users').doc(uid).update({ role: e.target.value }).then(function () {
+              toast('Yetki güncellendi', 'success');
+              logAction('forum_role', (u.username || uid) + ' → ' + e.target.value);
+              loadForumUsers();
+            }).catch(function (err) { toast('Hata: ' + err.message, 'error'); });
+          });
+        }
+
+        var banBtn = row.querySelector('.fu-ban');
+        if (banBtn) {
+          banBtn.addEventListener('click', function () {
+            db.collection('users').doc(uid).update({ banned: !u.banned }).then(function () {
+              toast(u.banned ? 'Ban kaldırıldı ✅' : 'Kullanıcı banlandı 🚫', 'success');
+              logAction('forum_ban', u.username || uid);
+              loadForumUsers();
+            }).catch(function (err) { toast('Hata: ' + err.message, 'error'); });
+          });
+        }
+
+        var delBtn = row.querySelector('.fu-del');
+        if (delBtn) {
+          delBtn.addEventListener('click', function () {
+            forumDelete(uid, u.username || uid);
+          });
+        }
+      });
+    }
+
+    function forumDelete(uid, username) {
+      if (!confirm('"' + username + '" hesabının TÜM forum verileri silinecek. Emin misiniz?')) return;
+      if (!confirm('SON UYARI: Geri alınamaz! Devam edilsin mi?')) return;
+
+      Promise.all([
         db.collection('threads').where('authorId', '==', uid).get(),
         db.collection('posts').where('authorId', '==', uid).get()
       ]).then(function (snaps) {
@@ -516,13 +610,22 @@
         snaps[1].forEach(function (d) { b.delete(d.ref); });
         b.delete(db.collection('users').doc(uid));
         return b.commit();
+      }).then(function () {
+        toast('✅ Forum verileri silindi', 'success');
+        logAction('forum_delete', username);
+        loadForumUsers();
+      }).catch(function (e) {
+        toast('Hata: ' + e.message, 'error');
       });
-    };
-    cleanFirestore().then(function () {
-      toast('✅ Forum verileri silindi (Auth kaydı: Firebase Console → Authentication)', 'success'); logAction('forum_delete', username); loadForumUsers();
-    }).catch(function (e) { toast('Hata: ' + e.message, 'error'); loadForumUsers(); });
-  }
+    }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();
-})();
+    // Global Yetki / Tetikleyici
+    window.loadForumUsers = loadForumUsers;
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(mount, 100);
+    } else {
+      document.addEventListener('DOMContentLoaded', mount);
+    }
+  })();
 })();
