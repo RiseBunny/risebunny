@@ -42,13 +42,15 @@ export default async function handler(req, res) {
   try {
     const url =
       `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/leaderboard/${kind}?key=${API_KEY}`;
-    const r = await fetch(url);
+    // API anahtarı siteye kısıtlıysa Referer şart → ekle
+    const r = await fetch(url, { headers: { Referer: 'https://risebunny.vercel.app/' } });
     if (r.status === 404) return res.json({ kind, updated: new Date().toISOString(), data: [], source: 'empty' });
     if (!r.ok) throw new Error(`firestore ${r.status}`);
     const doc = await r.json();
     const data = parseValue(doc.fields?.data) || [];
     return res.json({ kind, updated: new Date().toISOString(), data: data.slice(0, 50), source: 'firestore' });
   } catch (e) {
-    return res.status(500).json({ error: 'leaderboard hatası', detail: e.message });
+    // Anahtar/izin sorunu sayfayı 500'e düşürmesin → boş liste, site simülasyona düşer
+    return res.json({ kind, updated: new Date().toISOString(), data: [], source: 'unavailable' });
   }
 }

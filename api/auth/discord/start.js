@@ -1,5 +1,5 @@
 /** Discord ile giriş — 1. adım: Discord authorize sayfasına yönlendir. */
-import { safeNext } from '../_session.js';
+import { safeNext } from '../../_session.js';
 
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID || '1540401487581020252';
 

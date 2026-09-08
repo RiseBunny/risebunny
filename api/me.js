@@ -1,5 +1,5 @@
 /** Oturum + bot verisi: { user, game|null }. Bot çevrimdışıysa game=null. */
-import { getSession, clearSession, botHeaders, botBase } from '../_session.js';
+import { getSession, clearSession, botHeaders, botBase } from './_session.js';
 
 /* Bozuk ID'de bile çökmeyen avatar çözümleyici (BigInt throw atabilir). */
 function avatarUrl(id, hash) {
