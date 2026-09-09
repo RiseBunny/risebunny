@@ -1,5 +1,5 @@
 /** Site kuponu: bot /api/coupon/redeem'e iletir. Kullanıcı Discord girişli olmalı. */
-import { getSession, botHeaders, botBase } from './_session.js';
+import { getSession, botHeaders, botBase } from '../_session.js';
 
 async function readJson(req) {
   const chunks = [];

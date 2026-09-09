@@ -17,7 +17,7 @@ function safeUrl(u, allowData) {
 function clean(v) { return (typeof v === 'string' && v.trim() !== '') ? v.trim() : ''; }
 
 var I18N_DICT = {
-  en: { nav_arena: 'Minecraft', nav_bot: 'Mod Bot', nav_sys: 'Systems', nav_faq: 'FAQ', nav_contact: 'Contact',
+  en: { nav_arena: 'Rubidium', nav_bot: 'Mod Bot', nav_sys: 'Systems', nav_faq: 'FAQ', nav_contact: 'Contact',
     hero_badge: 'RiseBunny Software',
     hero_title: 'Rise Beyond Limits.',
     hero_sub: 'Discord bots, Minecraft clients, Brawl Stars projects — one bunny crew.',
@@ -46,7 +46,7 @@ var I18N_DICT = {
     copyright: '© 2026 RiseBunny. All rights reserved.', footer_slogan: 'Rise Beyond Limits.',
     modal_features: 'Under the Hood', btn_community: 'Join the Crew', btn_download: 'Cooking…', btn_download_now: 'Get It',
     status_dev: 'In the Lab', status_project: 'Prototype', status_active: 'Live 24/7' },
-  tr: { nav_arena: 'Minecraft', nav_bot: 'Mod Bot', nav_sys: 'Sistemler', nav_faq: 'SSS', nav_contact: 'İletişim',
+  tr: { nav_arena: 'Rubidium', nav_bot: 'Mod Bot', nav_sys: 'Sistemler', nav_faq: 'SSS', nav_contact: 'İletişim',
     hero_badge: 'RiseBunny Software',
     hero_title: 'Sınırların Ötesine Yüksel.',
     hero_sub: 'Discord botları, Minecraft istemcileri, Brawl Stars projeleri — tek tavşan ekibi.',
