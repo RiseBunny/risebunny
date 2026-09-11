@@ -116,7 +116,9 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys()
                .hasOnly(['replies', 'lastPostAt'])
           && sameOrPlusOne('replies'));
-      allow delete: if isStaff();
+      allow delete: if isStaff()
+        /* yazar kendi paylaşımını silebilir (hesap silme akışı + kendi temizliği) */
+        || (request.auth != null && request.auth.uid == resource.data.authorId);
     }
 
     /* ── Forum yanıtları ── */
@@ -136,7 +138,8 @@ service cloud.firestore {
                .hasOnly(['content', 'image', 'edited'])
           && validStr(request.resource.data.content, 4000)
           && validImage(request.resource.data.image));
-      allow delete: if isStaff();
+      allow delete: if isStaff()
+        || (request.auth != null && request.auth.uid == resource.data.authorId);
     }
 
     /* ── Kullanıcılar ──
@@ -154,6 +157,8 @@ service cloud.firestore {
       /* staff (admin onaylı rol) yönetir; kurucu dokümanlarına dokunulamaz */
       allow update, delete: if (isAdmin() || (isStaff()
         && !(doc in ['oblLBCNGXEYF8plKq8KUr3m6o4f1', '1310366324731547798'])));
+      /* kullanıcı kendi hesabını silebilir (veri silme talebi onay akışı) */
+      allow delete: if request.auth != null && request.auth.uid == doc;
       /* kullanıcı kendi profilini sınırlı alanlarda günceller */
       allow update: if request.auth != null && request.auth.uid == doc
         && request.resource.data.diff(resource.data).affectedKeys()
@@ -170,6 +175,19 @@ service cloud.firestore {
 
     match /activity/{doc} { allow read, write: if isAdmin(); }
     match /bans/{doc} { allow read, write: if isAdmin(); }
+    /* ── Site olay günlüğü (forum log): giriş yapmış herkes SADECE kendi
+       adına sınırlı alanlarla yazar; okuma/silme admin ── */
+    match /sitelog/{doc} {
+      allow read, delete: if isAdmin();
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['uid', 'username', 'aksiyon', 'detay', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && validStr(request.resource.data.username, 30)
+        && validStr(request.resource.data.aksiyon, 40)
+        && validStr(request.resource.data.detay, 500)
+        && request.resource.data.createdAt is number;
+      allow update: if false;
+    }
     match /notifications/{doc} {
       allow read: if request.auth != null && (isAdmin() || resource.data.userId == request.auth.uid);
       allow create: if request.auth != null
@@ -179,6 +197,46 @@ service cloud.firestore {
       allow update: if request.auth != null
         && resource.data.userId == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if isAdmin()
+        || (request.auth != null && resource.data.userId == request.auth.uid);
+    }
+
+    /* ── Report sistemi: herkes rapor açar; moderatör+ okur/yönetir; silme admin ── */
+    match /reports/{doc} {
+      allow read: if request.auth != null && (isStaff() || resource.data.raporlayan == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['hedefTip', 'hedefId', 'threadId', 'sebep', 'raporlayan', 'raporlayanAd', 'durum', 'istek', 'createdAt'])
+        && request.resource.data.raporlayan == request.auth.uid
+        && request.resource.data.hedefTip in ['thread', 'post', 'user']
+        && validStr(request.resource.data.hedefId, 60)
+        && validStr(request.resource.data.threadId, 60)
+        && validStr(request.resource.data.sebep, 300)
+        && validStr(request.resource.data.raporlayanAd, 30)
+        && request.resource.data.durum == 'acik'
+        && request.resource.data.istek in ['incele', 'ban']
+        && request.resource.data.createdAt is number;
+      allow update: if isStaff()
+        && request.resource.data.durum in ['acik', 'reddedildi', 'kurucuya', 'ban-onay', 'cozuldu']
+        && request.resource.data.raporlayan == resource.data.raporlayan
+        && request.resource.data.hedefId == resource.data.hedefId;
+      allow delete: if isAdmin();
+    }
+
+    /* ── Veri silme talepleri: kullanıcı kendi adına açar; karar admin ── */
+    match /silme_talepleri/{doc} {
+      allow read: if request.auth != null && (isAdmin() || resource.data.uid == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['uid', 'username', 'discordId', 'kapsam', 'durum', 'sebep', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && validStr(request.resource.data.username, 30)
+        && request.resource.data.discordId is string
+        && request.resource.data.discordId.size() <= 30
+        && request.resource.data.kapsam in ['bot', 'site', 'ikisi']
+        && request.resource.data.durum == 'bekliyor'
+        && validStr(request.resource.data.sebep, 300)
+        && request.resource.data.createdAt is number;
+      allow update: if isAdmin()
+        && request.resource.data.durum in ['bekliyor', 'onaylandi', 'reddedildi'];
       allow delete: if isAdmin();
     }
 

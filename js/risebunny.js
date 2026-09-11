@@ -314,6 +314,8 @@ function paintAccount(s) {
     if (sh) sh.hidden = true;
     var cb = $('#coupon-box');
     if (cb) cb.hidden = true;
+    var dl = $('#del-box');
+    if (dl) dl.hidden = true;
     return;
   }
   var g = s.game;
@@ -362,6 +364,135 @@ function paintAccount(s) {
     });
   }
   loadShop(s.botOnline);
+  paintDeletion(s);
+}
+
+/* ── Veri silme talebi: kapsam seç → çift onay → Firestore + bot bildirimi ── */
+var __delState = { kapsam: null, armed: false, docId: null, timer: null };
+function paintDeletion(s) {
+  var box = $('#del-box'), area = $('#del-area');
+  if (!box || !area) return;
+  if (!s || !s.ok) { box.hidden = true; return; }
+  box.hidden = false;
+  var L = function (tr, en) { return LANG === 'tr' ? tr : en; };
+  if (!__delState.docId) {
+    area.innerHTML = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">'
+      + '<button class="btn line sm" data-del-kapsam="bot">🤖 ' + L('Sadece Bot', 'Bot only') + '</button>'
+      + '<button class="btn line sm" data-del-kapsam="site">🌐 ' + L('Sadece Site', 'Site only') + '</button>'
+      + '<button class="btn line sm danger" data-del-kapsam="ikisi">🗑️ ' + L('İkisi Birden', 'Both') + '</button></div>'
+      + '<p class="lb-note" id="del-msg"></p>';
+    area.querySelectorAll('[data-del-kapsam]').forEach(function (b) {
+      b.addEventListener('click', function () { delSec(b.getAttribute('data-del-kapsam')); });
+    });
+  }
+}
+function delSec(kapsam) {
+  var area = $('#del-area'); if (!area) return;
+  var L = function (tr, en) { return LANG === 'tr' ? tr : en; };
+  if (__delState.kapsam !== kapsam || !__delState.armed) {
+    __delState = { kapsam: kapsam, armed: true, docId: null, timer: null };
+    clearTimeout(__delState.timer);
+    __delState.timer = setTimeout(function () { __delState.armed = false; paintDeletion(window.RBSession); }, 60000);
+    area.querySelector('#del-msg').textContent = L('⚠️ EMİN MİSİN? Bu geri alınamaz. Onaylamak için aynı butona TEKRAR bas.', '⚠️ ARE YOU SURE? This cannot be undone. Press the SAME button AGAIN to confirm.');
+    area.querySelectorAll('[data-del-kapsam]').forEach(function (b) {
+      if (b.getAttribute('data-del-kapsam') === kapsam) { b.classList.remove('line'); b.classList.add('solid'); }
+    });
+    return;
+  }
+  delGonder(kapsam);
+}
+function delGonder(kapsam) {
+  var area = $('#del-area');
+  var L = function (tr, en) { return LANG === 'tr' ? tr : en; };
+  var msg = area.querySelector('#del-msg');
+  msg.textContent = L('Gönderiliyor…', 'Sending…');
+  var fbUser = null;
+  try { fbUser = (window.firebase && firebase.apps.length && firebase.auth) ? firebase.auth().currentUser : null; } catch (e) {}
+  if (!fbUser) { msg.textContent = L('Önce sayfayı yenileyip girişin tamamlanmasını bekle.', 'Reload and wait for sign-in to finish.'); __delState.armed = false; return; }
+  var u = window.RBSession.user || {};
+  var payload = {
+    uid: fbUser.uid, username: (u.username || '').slice(0, 30),
+    discordId: String(u.id || '').slice(0, 30),
+    kapsam: kapsam, durum: 'bekliyor', sebep: '', createdAt: Date.now()
+  };
+  var db = firebase.firestore();
+  db.collection('silme_talepleri').add(payload).then(function (ref) {
+    return fetch('/api/deletion/request', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ docId: ref.id, kapsam: kapsam }) })
+      .then(function (r) { return r.json().catch(function () { return {}; }); })
+      .then(function () { return ref.id; });
+  }).then(function (docId) {
+    __delState = { kapsam: kapsam, armed: false, docId: docId, timer: null };
+    msg.textContent = L('✅ Talep iletildi. Sahip onaylayınca işlem yapılır, sonuç DM ile bildirilir.', '✅ Request sent. It will be processed after owner approval, result via DM.');
+    delDurumIzle(docId, kapsam);
+  }).catch(function (e) {
+    __delState.armed = false;
+    msg.textContent = '⚠️ ' + (e.message || e);
+  });
+}
+function delDurumIzle(docId, kapsam) {
+  var area = $('#del-area');
+  var L = function (tr, en) { return LANG === 'tr' ? tr : en; };
+  var msg = area ? area.querySelector('#del-msg') : null;
+  var n = 0;
+  var iv = setInterval(function () {
+    n++;
+    if (n > 24) { clearInterval(iv); return; }
+    fetch('/api/deletion/status?doc=' + encodeURIComponent(docId)).then(function (r) { return r.json(); }).then(function (j) {
+      if (!j || !j.durum || j.durum === 'bekliyor') return;
+      clearInterval(iv);
+      if (j.durum === 'reddedildi') {
+        if (msg) msg.textContent = L('❌ Talebin reddedildi.', '❌ Request rejected.') + (j.sebep ? ' ' + L('Sebep:', 'Reason:') + ' ' + j.sebep : '');
+        __delState = { kapsam: null, armed: false, docId: null, timer: null };
+        return;
+      }
+      if (j.durum === 'onaylandi') {
+        if (kapsam === 'bot') {
+          if (msg) msg.textContent = L('✅ Onaylandı — bot verilerin silindi (DM bildirimi de geldi).', '✅ Approved — bot data deleted (DM sent).');
+          __delState = { kapsam: null, armed: false, docId: null, timer: null };
+        } else {
+          siteVeriSil(msg, L);
+        }
+      }
+    }).catch(function () {});
+  }, 5000);
+}
+async function siteVeriSil(msg, L) {
+  try {
+    var au = firebase.auth().currentUser;
+    if (!au) throw new Error(L('Oturum bulunamadı.', 'No session.'));
+    if (!confirm(L('EMİN MİSİN? Forum konuların, yanıtların, bildirimlerin ve hesabın SİLİNECEK. (Son onay)', 'ARE YOU SURE? Your threads, replies, notifications and account will be DELETED. (Final)'))) {
+      if (msg) msg.textContent = L('İptal edildi.', 'Cancelled.');
+      return;
+    }
+    var db = firebase.firestore();
+    var uid = au.uid;
+    var getIds = async function (col, field) {
+      var s = await db.collection(col).where(field, '==', uid).get();
+      var ids = []; s.forEach(function (d) { ids.push(d.ref); }); return ids;
+    };
+    var refs = [];
+    refs = refs.concat(await getIds('threads', 'authorId'));
+    refs = refs.concat(await getIds('posts', 'authorId'));
+    refs = refs.concat(await getIds('notifications', 'userId'));
+    var batch = db.batch();
+    var say = 0;
+    refs.forEach(function (r) { batch.delete(r); say++; if (say % 400 === 0) {} });
+    await batch.commit().catch(function () {});
+    await db.collection('users').doc(uid).delete().catch(function () {});
+    // Kendi silme taleplerini de temizle
+    try {
+      var mine = await db.collection('silme_talepleri').where('uid', '==', uid).get();
+      var b2 = db.batch(); mine.forEach(function (d) { b2.delete(d.ref); }); await b2.commit().catch(function () {});
+    } catch (e2) {}
+    try { await au.delete(); } catch (e3) {}
+    if (msg) msg.textContent = L('✅ Site verilerin silindi. Çıkış yapılıyor…', '✅ Site data deleted. Signing out…');
+    try { await fetch('/api/me?logout=1'); } catch (e4) {}
+    try { await firebase.auth().signOut(); } catch (e5) {}
+    setTimeout(function () { location.reload(); }, 1500);
+  } catch (e) {
+    if (msg) msg.textContent = '⚠️ ' + (e.message || e);
+  }
 }
 function loadShop(botOnline) {
   var sh = $('#shop-box');

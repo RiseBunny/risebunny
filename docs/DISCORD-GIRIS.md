@@ -79,18 +79,41 @@ Bot yeniden başlat. Logda görmelisin:
   Site bayrağı bot DB'de tutulur, site `/api/status` üzerinden okur.
 - `r!mağaza-yönet` → ürün seç (menü) → **Fiyat Değiştir** (sohbete sayı yaz) /
   **Göster-Gizle**. Değişiklik site mağazasına anında yansır; gizli ürün alınamaz.
+- `r!kupon` → tam butonlu panel (süre butonları: 1sa–1yıl/süresiz). Süresi dolan
+  kuponlar 5 dk'da bir otomatik silinir. `r!kodoluştur liste|sil <kod>` de durur.
+- `r!siterol @a @b` → rol seç menüsü (kurucu hariç) → çoklu rol verme + DM + log.
+  Kullananlar: sahip + `1310366324731547798`.
+- `r!hatırlat <süre> <metin>` → **premium** komut; esnek süre (10dk/2 hafta/3 ay),
+  DM embed hatırlatma, restart-safe. `liste` / `sil <no>`.
 - İkisi de yalnızca **sahip ID** (`U.SAHIP_ID`) kullanabilir; site admin paneli
   ayrıca Firebase admin UID ile korunur.
 
-## 7) Owner-log bağlantıları (05 formu + satışlar + VIP)
+## 7) Owner-log + Forum log bağlantıları
 
 - Site 05 iletişim formu → `/api/contact` → bot `#owner-log` kanalına embed düşer
   (bot çevrimdışıysa form yine kaydedilir, log atlanır).
 - Site mağaza satışı + pazar satışı + `r!pet al` → owner-log'a embed/satır düşer.
 - VIP bitimi: 60 sn süpürücü yakalar → owner-log + kullanıcıya **DM (embed)** atılır.
-- Gerekli: bot `.env`'de `BOT_API_SECRET`, `OWNER_LOG` kanal ID'si (`utils.js`).
+- **Forum log:** forumdaki giriş/konu/yanıt/silme/rol/ban/kilit adımları Firestore
+  `sitelog` koleksiyonuna yazılır → admin panelde **Forum Log** sekmesi listeler →
+  aynı anda `/api/log` üzerinden bot `#owner-log` kanalına embed aynalanır.
+  Gerekli: bot `.env`'de `BOT_API_SECRET`, `OWNER_LOG` kanal ID'si (`utils.js`).
 
 ## 8) Tek oturum (SSO) + Rastgele Paket
+
+## 9) Forum bildirimleri + çeviri + site kategorisi
+
+- Yanıt gelince **yazar + o konuya daha önce yorum yazanlar** site çanına düşer
+  (`notifications`) ve Discord ID'si kayıtlı olanlara **bot DM** atar
+  (`/api/notify` → butonlu embed).
+- Konu görünümünde **🔕 Bildirimleri Kapat / 🔔 Aç** butonu (kullanıcı bazlı,
+  `stats.mutedThreads` içinde tutulur, rules değişikliği gerekmez).
+- Discord ID eşleşmesi: `heal()` artık `d<ID>@discord.risebunny.local` e-postasından
+  `discordId` alanını profil belgesine yazar (rules `create` anahtar kısıtı yok).
+- Her paylaşımda **🌐 çeviri** butonu: metni o anki arayüz diline çevirir
+  (anahtarsız MyMemory, 450 karakter, ikinci tık kapatır).
+- Bot yardım menüsünde **🔗 Site** kategorisi: `siterol`, `kodkullan`, `kodoluştur`.
+  Tüm komutlar kategori denetiminden geçti (bayat `kuponoluştur` kaydı silindi).
 
 ## 9) Gerçek liderlik verisi + veri kaybı önlemi (bot tarafı)
 
@@ -126,3 +149,11 @@ VPS. Geçici güvence: `r!yedek` (DB dosyasını DM'e gönderir) +
 - Fiyat hilesi imkânsız: tarayıcıdan gelen fiyat değil, botun `SHOP_CATALOG`'u geçerli.
 - Ödeme cüzdan+banka toplamından; yetersizse `402`.
 - Secret şüphesinde: Discord portalden **Regenerate**, Vercel + bot `.env`'i güncelle, redeploy.
+
+## 11) Admin panel, report ve veri silme akışları
+
+- **Admin panel:** yalnızca 2 kişi (sahip UID + `1310366324731547798`), **sadece Discord ile giriş** (mail formu kaldırıldı).
+- **Report:** forumda 🚩 → moderatör `#/mod` panelinde Reddet / Sil / Kurucuya / Ban İste. Ban onayları admin panel **Forum Üyeleri** sekmesindeki kuyruktan Onayla/Reddet ile işler.
+- **Veri silme:** site Hesabım → kapsam seç → çift onay → Firestore talebi + bot bildirimi → sahip Discord'da **Emin misin?** onayından sonra bot verileri silinir, site verileri kullanıcının tarayıcısında silinir, sonuç DM ile bildirilir.
+- **İlk kullanım onayı:** `dil` + `yardım` hariç tüm komutlar `onay_<id>` ister; dil panelindeki **Kaydet ve Kabul Et** ile verilir, docs/gizlilik/şartlar linkleri paneldedir.
+- **Yedek:** `r!yedek` tam snapshot alır (önceki snapshot silinir — tek aktif yedek), `r!yedek-yükle [+dosya | son]` geri yükler.

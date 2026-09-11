@@ -100,9 +100,11 @@
         var tb = btn.getAttribute('data-tab');
         if (tb === 'messages') loadMessages();
         if (tb === 'logs') loadLogs();
+        if (tb === 'sitelog') loadSiteLog();
         if (tb === 'dashboard') loadDashboard();
         if (tb === 'bans') loadBans();
         if (tb === 'forum' && window.loadForumUsers) window.loadForumUsers();
+        if (tb === 'forum' && window.loadRepQueues) window.loadRepQueues();
       });
     });
     var rb = $('#btn-refresh-bans'); if (rb) rb.addEventListener('click', loadBans);
@@ -390,6 +392,25 @@
     if (!confirm('Tüm log silinsin mi?')) return;
     db.collection('activity').get().then(function (snap) { var batch = db.batch(); snap.forEach(function (d) { batch.delete(d.ref); }); return batch.commit(); }).then(function () { toast('Log temizlendi', 'success'); loadLogs(); }).catch(function (e) { toast('Hata: ' + e.message, 'error'); });
   });
+  /* ── Forum Log: sitede yapılan adımlar (sitelog) ── */
+  function loadSiteLog() {
+    var l = $('#sitelog-list'); if (!l) return;
+    l.innerHTML = '<div class="log-empty">Yükleniyor...</div>';
+    db.collection('sitelog').orderBy('createdAt', 'desc').limit(150).get().then(function (snap) {
+      var rows = []; snap.forEach(function (d) { var x = d.data(); x.id = d.id; rows.push(x); });
+      if (!rows.length) { l.innerHTML = '<div class="log-empty">Henüz site adımı yok.</div>'; return; }
+      var icons = { giris: 'fa-right-to-bracket', konu: 'fa-plus', yanit: 'fa-reply', 'konu-sil': 'fa-trash', 'yanit-sil': 'fa-trash', rol: 'fa-user-gear', ban: 'fa-user-slash', unban: 'fa-user-check', kilitle: 'fa-lock', 'kilit-ac': 'fa-lock-open', sabitle: 'fa-thumbtack', 'sabit-kaldir': 'fa-thumbtack' };
+      l.innerHTML = rows.map(function (x) {
+        var d = new Date(Number(x.createdAt) || Date.now());
+        return '<div class="log-item"><i class="fa-solid ' + (icons[x.aksiyon] || 'fa-circle') + '"></i><span><b>' + esc(x.aksiyon) + '</b> · ' + esc(x.username || x.uid || '') + ': ' + esc(x.detay || '') + '</span><span class="log-date">' + d.toLocaleString('tr-TR') + '</span></div>';
+      }).join('');
+    }).catch(function (e) { l.innerHTML = '<div class="log-empty">Yüklenemedi: ' + esc(e.message) + '</div>'; });
+  }
+  var csl = $('#btn-clear-sitelog');
+  if (csl) csl.addEventListener('click', function () {
+    if (!confirm('Forum log tamamen silinsin mi?')) return;
+    db.collection('sitelog').get().then(function (snap) { var batch = db.batch(); snap.forEach(function (d) { batch.delete(d.ref); }); return batch.commit(); }).then(function () { toast('Forum log temizlendi', 'success'); loadSiteLog(); }).catch(function (e) { toast('Hata: ' + e.message, 'error'); });
+  });
   /* Bağlantı tanısı: hangi koleksiyonun neden okunamadığını panele yazar */
   function diag() {
     var box = $('#conn-diag');
@@ -403,7 +424,8 @@
       ['threads', db.collection('threads').limit(1).get()],
       ['messages', db.collection('messages').limit(1).get()],
       ['activity', db.collection('activity').limit(1).get()],
-      ['bans', db.collection('bans').limit(1).get()]
+      ['bans', db.collection('bans').limit(1).get()],
+      ['sitelog', db.collection('sitelog').limit(1).get()]
     ];
     var biten = 0;
     testler.forEach(function (t) {
@@ -470,15 +492,24 @@
 
     function forumPurge() {
       var MASTER = ['oblLBCNGXEYF8plKq8KUr3m6o4f1', '1310366324731547798'];
+      var MASTER_DC = ['985126554306773063', '1310366324731547798'];
+      function isMaster(d) {
+        if (MASTER.indexOf(d.id) !== -1) return true;
+        var data = {};
+        try { data = d.data() || {}; } catch (e) {}
+        if (data.role === 'kurucu') return true;
+        if (data.discordId && MASTER_DC.indexOf(String(data.discordId)) !== -1) return true;
+        return false;
+      }
       if (!confirm('Kurucu hesapları hariç TÜM forum kullanıcıları silinecek. Emin misin?')) return;
       if (!confirm('SON UYARI: Geri alınamaz! Devam edilsin mi?')) return;
       db.collection('users').get().then(function (snap) {
-        var b = db.batch(); var n = 0;
-        snap.forEach(function (d) { if (MASTER.indexOf(d.id) === -1) { b.delete(d.ref); n++; } });
-        if (!n) { toast('Silinecek hesap yok.', 'info'); return; }
+        var b = db.batch(); var n = 0, atlandi = 0;
+        snap.forEach(function (d) { if (isMaster(d)) { atlandi++; return; } b.delete(d.ref); n++; });
+        if (!n) { toast('Silinecek hesap yok.' + (atlandi ? ' (' + atlandi + ' admin korundu)' : ''), 'info'); return; }
         return b.commit().then(function () {
-          toast(n + ' hesap temizlendi', 'success');
-          logAction('forum_purge', n + ' hesap silindi');
+          toast(n + ' hesap temizlendi' + (atlandi ? ', ' + atlandi + ' admin korundu' : ''), 'success');
+          logAction('forum_purge', n + ' hesap silindi, ' + atlandi + ' admin korundu');
           loadForumUsers();
         });
       }).catch(function (e) { toast('Hata: ' + e.message, 'error'); });
@@ -582,6 +613,8 @@
     }
 
     function forumDelete(uid, username) {
+      var MASTER = ['oblLBCNGXEYF8plKq8KUr3m6o4f1', '1310366324731547798'];
+      if (MASTER.indexOf(uid) !== -1) { toast('Admin hesapları silinemez.', 'error'); return; }
       if (!confirm('"' + username + '" hesabının TÜM forum verileri silinecek. Emin misiniz?')) return;
       if (!confirm('SON UYARI: Geri alınamaz! Devam edilsin mi?')) return;
 
@@ -606,6 +639,91 @@
     // Global Yetki / Tetikleyici (admin-forum.js yedeği bunu görürse susar)
     window.loadForumUsers = loadForumUsers;
     window.loadForumUsers.__rbMain = true;
+
+    /* ── Rapor kuyrukları: kurucuya yükselenler + ban onayları ── */
+    function repRow(r, admin) {
+      return '<div class="admin-row" style="margin-bottom:10px">' +
+        '<div class="row-header"><div class="row-title"><b>🚩 ' + esc(r.hedefTip) + '</b> <code>' + esc(String(r.hedefId).slice(0, 24)) + '</code>' +
+        ' <span style="opacity:.6;font-size:12px">' + esc(r.raporlayanAd || '') + ' → ' + esc(r.sebep || '') + '</span></div></div>' +
+        '<div class="row-controls" style="margin-top:8px">' +
+        (admin
+          ? '<button type="button" class="btn btn-primary btn-sm" data-rep-ok="' + r.id + '">✅ Onayla</button>' +
+            '<button type="button" class="btn btn-outline btn-sm" data-rep-no="' + r.id + '">✖️ Reddet</button>'
+          : '<button type="button" class="btn btn-outline btn-sm danger" data-rep-del="' + r.id + '">🗑 İçeriği Sil</button>' +
+            '<button type="button" class="btn btn-outline btn-sm" data-rep-no="' + r.id + '">✖️ Reddet</button>') +
+        '</div></div>';
+    }
+    function bindRep(box) {
+      box.querySelectorAll('[data-rep-ok]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var rid = b.getAttribute('data-rep-ok');
+          db.collection('reports').doc(rid).get().then(function (s) {
+            if (!s.exists) return loadRepQueues();
+            var r = s.data();
+            var islem = (r.istek === 'ban')
+              ? db.collection('users').doc(r.hedefId).update({ banned: true })
+              : Promise.resolve();
+            return islem.then(function () {
+              return db.collection('reports').doc(rid).update({ durum: 'cozuldu' });
+            });
+          }).then(function () {
+            toast('✅ Onaylandı', 'success');
+            logAction('report_onay', rid);
+            loadRepQueues();
+          }).catch(function (e) { toast('Hata: ' + e.message, 'error'); });
+        });
+      });
+      box.querySelectorAll('[data-rep-no]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          if (!confirm('Rapor reddedilsin mi?')) return;
+          db.collection('reports').doc(b.getAttribute('data-rep-no')).update({ durum: 'reddedildi' }).then(function () {
+            toast('Reddedildi', 'info'); logAction('report_red', b.getAttribute('data-rep-no')); loadRepQueues();
+          }).catch(function (e) { toast('Hata: ' + e.message, 'error'); });
+        });
+      });
+      box.querySelectorAll('[data-rep-del]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          if (!confirm('Raporlanan içerik SİLİNSİN mi?')) return;
+          var rid = b.getAttribute('data-rep-del');
+          db.collection('reports').doc(rid).get().then(function (s) {
+            if (!s.exists) return loadRepQueues();
+            var r = s.data();
+            var silme;
+            if (r.hedefTip === 'thread') {
+              silme = db.collection('posts').where('threadId', '==', r.hedefId).get().then(function (ps) {
+                var bt = db.batch(); ps.forEach(function (x) { bt.delete(x.ref); });
+                bt.delete(db.collection('threads').doc(r.hedefId));
+                return bt.commit();
+              });
+            } else if (r.hedefTip === 'post') {
+              silme = db.collection('posts').doc(r.hedefId).delete();
+            } else { silme = Promise.resolve(); }
+            return silme.then(function () { return db.collection('reports').doc(rid).update({ durum: 'cozuldu' }); });
+          }).then(function () { toast('🗑 İçerik silindi', 'success'); logAction('report_sil', rid); loadRepQueues(); })
+          .catch(function (e) { toast('Hata: ' + e.message, 'error'); });
+        });
+      });
+    }
+    function loadRepQueues() {
+      var kBox = $('#rep-kurucu'), bBox = $('#rep-ban');
+      if (kBox) {
+        kBox.innerHTML = '<div class="msg-empty">Yükleniyor...</div>';
+        db.collection('reports').where('durum', '==', 'kurucuya').get().then(function (snap) {
+          var rows = []; snap.forEach(function (d) { rows.push(Object.assign({ id: d.id }, d.data())); });
+          kBox.innerHTML = rows.length ? rows.map(function (r) { return repRow(r, true); }).join('') : '<div class="msg-empty">Bekleyen yok. 🎉</div>';
+          bindRep(kBox);
+        }).catch(function (e) { kBox.innerHTML = '<div class="msg-empty">Hata: ' + esc(e.message) + '</div>'; });
+      }
+      if (bBox) {
+        bBox.innerHTML = '<div class="msg-empty">Yükleniyor...</div>';
+        db.collection('reports').where('durum', '==', 'acik').get().then(function (snap) {
+          var rows = []; snap.forEach(function (d) { var x = d.data() || {}; if (x.istek === 'ban') rows.push(Object.assign({ id: d.id }, x)); });
+          bBox.innerHTML = rows.length ? rows.map(function (r) { return repRow(r, true); }).join('') : '<div class="msg-empty">Bekleyen yok. 🎉</div>';
+          bindRep(bBox);
+        }).catch(function (e) { bBox.innerHTML = '<div class="msg-empty">Hata: ' + esc(e.message) + '</div>'; });
+      }
+    }
+    window.loadRepQueues = loadRepQueues;
 
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
       setTimeout(mount, 100);

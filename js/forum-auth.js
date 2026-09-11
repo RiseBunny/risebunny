@@ -2,7 +2,7 @@
 try { auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); } catch (e) {}
 
 const DOMAIN = "@risebunny.app";
-const WEIGHT = { member:1, vip:2, moderator:3, developer:4, kurucu:5 };
+const WEIGHT = { member:1, vip:2, moderator:3, developer:5, kurucu:5 };
 const BADGE = {
   kurucu:    { icon:"👑", tr:"Kurucu",     en:"Founder" },
   developer: { icon:"💻", tr:"Geliştirici", en:"Developer" },

@@ -15,20 +15,13 @@
 
 <!-- GİRİŞ EKRANI -->
 <div id="auth-screen" hidden>
-  <form id="login-form" class="login-card" autocomplete="on">
+  <div class="login-card">
     <img src="images/bot.svg" alt="RiseBunny Bot" class="login-logo">
     <h1>Admin Girişi</h1>
-    <p>RiseBunny Yönetim Paneli</p>
-    <label>E-posta
-      <input type="email" id="login-email" required autocomplete="username" placeholder="admin@risebunny.com">
-    </label>
-    <label>Şifre
-      <input type="password" id="login-pass" required autocomplete="current-password" placeholder="••••••••">
-    </label>
-    <button class="btn btn-primary" type="submit"><i class="fa-solid fa-right-to-bracket"></i> Giriş Yap</button>
-    <a class="btn btn-outline" href="/api/auth/discord/start?next=/admin.html" style="width:100%;margin-top:10px;padding:12px"><i class="fa-brands fa-discord"></i> Discord ile Giriş</a>
-    <p id="login-attempts" class="login-hint" aria-live="polite">Kalan deneme hakkı: 3 / 3</p>
-  </form>
+    <p>RiseBunny Yönetim Paneli — yalnızca Discord ile giriş (2 yetkili).</p>
+    <a class="btn btn-primary" href="/api/auth/discord/start?next=/admin.html" style="width:100%;padding:12px"><i class="fa-brands fa-discord"></i> Discord ile Giriş</a>
+    <p id="login-attempts" class="login-hint" aria-live="polite"></p>
+  </div>
 </div>
 
 <!-- YÖNETİM PANELİ -->
@@ -56,6 +49,7 @@
     <button type="button" class="tab" data-tab="messages"><i class="fa-solid fa-envelope"></i> Mesajlar</button>
     <button type="button" class="tab" data-tab="forum"><i class="fa-solid fa-users-gear"></i> Forum Üyeleri</button>
     <button type="button" class="tab" data-tab="bans"><i class="fa-solid fa-user-slash"></i> Banlar</button>
+    <button type="button" class="tab" data-tab="sitelog"><i class="fa-solid fa-list-check"></i> Forum Log</button>
     <button type="button" class="tab" data-tab="logs"><i class="fa-solid fa-clock-rotate-left"></i> Loglar</button>
   </nav>
 
@@ -194,6 +188,14 @@
         <input type="text" id="fu-search" placeholder="🔍 Kullanıcı adı ile ara..." style="margin-bottom:14px">
         <div id="forum-users"><div class="msg-empty">Yükleniyor...</div></div>
       </div>
+      <div class="admin-row" style="margin-top:14px">
+        <h4 style="margin-bottom:8px">👑 Kurucuya Yükseltilen Raporlar</h4>
+        <div id="rep-kurucu"><div class="msg-empty">Yükleniyor...</div></div>
+      </div>
+      <div class="admin-row" style="margin-top:14px">
+        <h4 style="margin-bottom:8px">⛔ Ban Onayları</h4>
+        <div id="rep-ban"><div class="msg-empty">Yükleniyor...</div></div>
+      </div>
     </section>
 
     <!-- 10. BANLAR -->
@@ -203,6 +205,11 @@
     </section>
 
     <!-- 11. LOGLAR -->
+    <section class="tab-panel" data-panel="sitelog">
+      <div class="panel-head"><h3>Forum Log — Sitede Yapılan Adımlar</h3><button type="button" id="btn-clear-sitelog" class="btn btn-outline btn-sm danger"><i class="fa-solid fa-trash"></i> Temizle</button></div>
+      <div id="sitelog-list"></div>
+    </section>
+
     <section class="tab-panel" data-panel="logs">
       <div class="panel-head"><h3>Aktivite Geçmişi</h3><button type="button" id="btn-clear-logs" class="btn btn-outline btn-sm danger"><i class="fa-solid fa-trash"></i> Geçmişi Temizle</button></div>
       <div id="logs-list"></div>

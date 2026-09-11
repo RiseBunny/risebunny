@@ -62,7 +62,8 @@ function forumBridge(s) {
     if (!s.ok || !s.fb || !s.fb.email || !s.fb.pw) return;
     var isForum = !!document.getElementById('rb-nav-user') || location.pathname.indexOf('forum') > -1;
     var isAdmin = /admin\.html/.test(location.pathname);
-    if (!isForum && !isAdmin) return;
+    var isAccount = /risebunny(\.html)?$/.test(location.pathname) || !!document.getElementById('acc-box');
+    if (!isForum && !isAdmin && !isAccount) return;
     if (!window.firebase || !firebase.auth) return;
     if (!firebase.apps.length) {
       if (!window.firebaseConfig) return;
