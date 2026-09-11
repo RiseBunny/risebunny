@@ -108,7 +108,9 @@ function show404() {
     '.rb-search:focus{border-color:var(--acc)}' +
     '.rb-ulink{cursor:pointer;text-decoration:underline dotted}.rb-ulink:hover{color:var(--acc)}' +
     '.rb-udetail h3{margin:18px 0 8px;font-size:15px}.rb-udetail small{color:var(--dim)}' +
-    '.rb-rowclick{cursor:pointer}.rb-rowclick:hover{border-color:rgba(139,92,246,.5)}';
+    '.rb-rowclick{cursor:pointer}.rb-rowclick:hover{border-color:rgba(139,92,246,.5)}' +
+    '.rb-navmod{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:linear-gradient(135deg,rgba(139,92,246,.15),transparent);font-size:16px;text-decoration:none;transition:.2s}' +
+    '.rb-navmod:hover{border-color:#8b5cf6;transform:translateY(-1px)}';
   document.head.appendChild(s);
 })();
 
@@ -835,15 +837,21 @@ async function renderMod() {
   rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   view().innerHTML = `<div class="forum-wrap"><a class="rb-back" href="#/">${t("back")}</a>
     <h2 class="rb-h2">🛡️ Mod Paneli — Açık Raporlar (${rows.length})</h2>
-    ${rows.map(r => `<div class="rb-post"><div class="rb-posthead"><b>${esc(r.hedefTip)}: ${esc(r.hedefId.slice(0, 24))}</b>
+    ${rows.map(r => {
+      const tipRenk = r.hedefTip === "user" ? "#ef4444" : r.hedefTip === "post" ? "#3b82f6" : "#f59e0b";
+      const tipAd = r.hedefTip === "user" ? "👤 Kullanıcı" : r.hedefTip === "post" ? "💬 Yanıt" : "📝 Konu";
+      return `<div class="rb-post" style="border-left:4px solid ${tipRenk}">
+      <div class="rb-posthead"><span style="background:${tipRenk}22;color:${tipRenk};padding:3px 10px;border-radius:99px;font-size:.75rem;font-weight:700">${tipAd}</span>
+      <b>${esc(String(r.hedefId).slice(0, 24))}</b>
       <span class="rb-time">${esc(r.raporlayanAd || "")}</span></div>
-      <div class="rb-postbody">${esc(r.sebep || "")}<br><small style="opacity:.6">Konu: <a href="#/t/${esc(r.threadId || "")}">${esc((r.threadId || "").slice(0, 12))}</a></small></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+      <div class="rb-postbody">${esc(r.sebep || "")}<br><small style="opacity:.6">Konu: <a href="#/t/${esc(r.threadId || "")}">${esc(String(r.threadId || "").slice(0, 12)) || "—"}</a>${r.istek === "ban" ? ' · <b style="color:#ef4444">⛔ BAN TALEBİ</b>' : ""}</small></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
       <button class="rb-ghost rb-danger" data-act="sil" data-rid="${r.id}">🗑 Sil</button>
       <button class="rb-ghost" data-act="red" data-rid="${r.id}">✖️ Reddet</button>
       <button class="rb-ghost" data-act="kur" data-rid="${r.id}">👑 Kurucuya</button>
       <button class="rb-ghost" data-act="ban" data-rid="${r.id}">⛔ Ban İste</button>
-      </div></div>`).join("") || `<div class="rb-empty">Bekleyen rapor yok. 🎉</div>`}</div>`;
+      </div></div>`;
+    }).join("") || `<div class="rb-empty">Bekleyen rapor yok. 🎉</div>`}</div>`;
   view().querySelectorAll("[data-act]").forEach(b => b.addEventListener("click", () => {
     const rid = b.getAttribute("data-rid"), act = b.getAttribute("data-act");
     if (act === "sil") RB.repSil(rid);
@@ -886,8 +894,27 @@ RB.translatePost = async (btn) => {
     div.textContent = "…";
     wrap.appendChild(div);
     const kaynak = hedef === "tr" ? "en" : "tr";
-    const r = await fetch("https://api.mymemory.translated.net/get?q=" + encodeURIComponent(metin) + "&langpair=" + kaynak + "|" + hedef).then(x => x.json()).catch(() => null);
-    const cev = r && r.responseData && r.responseData.translatedText;
+    let cev = null;
+    // 1) MyMemory
+    try {
+      const r = await fetch("https://api.mymemory.translated.net/get?q=" + encodeURIComponent(metin) + "&langpair=" + kaynak + "|" + hedef).then(x => x.json()).catch(() => null);
+      const t = r && r.responseData && r.responseData.translatedText;
+      if (t && !/MYMEMORY WARNING/i.test(t) && t !== "PLEASE SELECT TWO DISTINCT LANGUAGES") cev = t;
+    } catch (e2) {}
+    // 2) Google GTX yedeği
+    if (!cev) {
+      try {
+        const r2 = await fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=" + kaynak + "&tl=" + hedef + "&dt=t&q=" + encodeURIComponent(metin)).then(x => x.json()).catch(() => null);
+        if (r2 && Array.isArray(r2) && Array.isArray(r2[0])) cev = r2[0].map(function (x) { return x[0]; }).join("");
+      } catch (e3) {}
+    }
+    // 3) Lingva yedeği
+    if (!cev) {
+      try {
+        const r3 = await fetch("https://lingva.ml/api/v1/" + kaynak + "/" + hedef + "/" + encodeURIComponent(metin)).then(x => x.json()).catch(() => null);
+        if (r3 && r3.translation) cev = r3.translation;
+      } catch (e4) {}
+    }
     div.textContent = cev || (hedef === "tr" ? "Çeviri alınamadı." : "Translation failed.");
   } catch (e) {}
 };

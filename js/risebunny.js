@@ -104,7 +104,7 @@ $('#feat-grid').innerHTML = FEATS.map(function (f) {
 /* ── 3) Komut simülatörü ── */
 var SIM = [
   { k: ['r!yardım', 'r!help', 'r!yardim'], t: '📚 **RiseBunny Yardım** — 17 kategori, 162 komut.\n🛡️ moderasyon • 📝 kayıt • 💰 ekonomi • 🔒 koruma • 🎉 çekiliş\nÖrn: `r!param` bakiyeni gösterir.' },
-  { k: ['r!param', 'r!para', 'r!balance'], t: '💸 Bakiyen: **12.450** para • 🏦 Banka: **30.000**\nİpucu: `r!günlük-ödül` ile her gün bonus al.' },
+  { k: ['r!param', 'r!para', 'r!balance'], t: '💸 Bakiyen: **12.450** para • 🏦 Banka: **30.000**\nİpucu: `r!günlük-ödül` ile her gün bonus al.\n_(simülasyon — Discord botundaki gerçek bakiyen bot veritabanındadır)_' },
   { k: ['r!günlük', 'r!günlük-ödül', 'r!gunluk', 'r!daily'], t: '🎁 Günlük ödül: **+2.500** 💸 + **+40** XP!\nYarın yine gel, seri bozulmasın 🔥' },
   { k: ['r!seviye', 'r!level', 'r!rank'], t: '🏆 Seviye **7** • XP **3.240 / 4.000**\nSonraki ödül: **5.000** 💸 (Seviye 8)' },
   { k: ['r!ping'], t: '🏓 Pong! **42ms** • API **67ms**' },

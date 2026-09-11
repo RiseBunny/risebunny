@@ -25,7 +25,7 @@ service cloud.firestore {
     }
     function isStaff() {
       return isAdmin()
-        || (request.auth != null && myRole() in ['moderator', 'developer', 'kurucu']);
+        || (request.auth != null && myRole() in ['moderator', 'kurucu']);
     }
     function validStr(v, max) {
       return v is string && v.size() > 0 && v.size() <= max;
